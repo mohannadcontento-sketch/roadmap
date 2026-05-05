@@ -2,46 +2,56 @@ export type NodeStatus = 'done' | 'active' | 'locked' | 'milestone' | 'branch';
 
 export interface RoadmapNode {
   id: string;
-  icon: string; // path to 3D icon image
-  emoji: string; // fallback emoji
+  icon: string;
+  emoji: string;
   label: string;
   subtitle?: string;
   status: NodeStatus;
   description?: string;
   tags?: string[];
   week?: string;
-  character?: string; // path to character image shown alongside
+  character?: string;
 }
 
 export interface BranchPath {
   id: string;
-  icon: string; // path to 3D icon image
-  emoji: string; // fallback
+  icon: string;
+  emoji: string;
   label: string;
   description: string;
   color: string;
 }
 
 /* ═══════════════════════════════════════
-   Color Palette
+   Color Palette - Enhanced Duolingo Dark Theme
    ═══════════════════════════════════════ */
 export const COLORS = {
-  bg: '#172a39',          // main dark background
-  bgLight: '#1e3a4d',    // lighter surface
-  bgCard: '#1a3344',     // card background
-  primary: '#73b3ce',    // main accent - cyan blue
-  light: '#d6f3f4',      // very light cyan
-  cream: '#f8f5f0',      // off-white text
-  dark: '#004346',        // deep teal
-  mid: '#508992',         // mid teal
-  gold: '#e8b931',        // gold for milestones
-  success: '#4ecdc4',     // success green
-  danger: '#ff6b6b',      // danger red
+  bg: '#0f1f2e',
+  bgLight: '#162d40',
+  bgCard: '#1a3347',
+  bgCardHover: '#1f3b52',
+  primary: '#58c4dc',
+  primaryDark: '#3a9bb5',
+  primaryLight: '#8fd8eb',
+  light: '#d6f3f4',
+  cream: '#f8f5f0',
+  dark: '#004346',
+  mid: '#508992',
+  gold: '#ffc800',
+  goldDark: '#cc9f00',
+  goldLight: '#ffe066',
+  success: '#58cc02',
+  successDark: '#46a302',
+  successLight: '#7edc3f',
+  danger: '#ff4b4b',
   textPrimary: '#f8f5f0',
-  textSecondary: '#9ab8c4',
+  textSecondary: '#a3c4d0',
   textMuted: '#5a7f8f',
-  border: 'rgba(115, 179, 206, 0.12)',
-  borderLight: 'rgba(115, 179, 206, 0.2)',
+  border: 'rgba(88, 196, 220, 0.15)',
+  borderLight: 'rgba(88, 196, 220, 0.25)',
+  lockedBg: '#152535',
+  lockedBorder: 'rgba(88, 196, 220, 0.06)',
+  nodeShadow: 'rgba(0, 0, 0, 0.4)',
 };
 
 export const ROADMAP_DATA: RoadmapNode[] = [
@@ -132,7 +142,7 @@ export const ROADMAP_DATA: RoadmapNode[] = [
     id: 'resilience',
     icon: '/roadmap/icons/resilience.png',
     emoji: '🛡️',
-    label: 'الهوية الجديدة',
+    label: 'المرونة',
     subtitle: 'أنت تغيرت',
     status: 'locked',
     description: 'المرحلة الأخيرة — تثبيت التغيير والوقاية من الانتكاس. Relapse Prevention.',
@@ -161,7 +171,7 @@ export const BRANCH_PATHS: BranchPath[] = [
     emoji: '🏃',
     label: 'الرياضة',
     description: 'أعلى تأثير على الدوبامين الطبيعي',
-    color: '#73b3ce',
+    color: '#58c4dc',
   },
   {
     id: 'reading',
@@ -169,7 +179,7 @@ export const BRANCH_PATHS: BranchPath[] = [
     emoji: '📚',
     label: 'القراءة',
     description: 'إعادة بناء قدرات التركيز العميق',
-    color: '#4ecdc4',
+    color: '#58cc02',
   },
   {
     id: 'chess',
@@ -177,7 +187,7 @@ export const BRANCH_PATHS: BranchPath[] = [
     emoji: '♟️',
     label: 'الشطرنج',
     description: 'تحدي ذهني بديل للألعاب',
-    color: '#a78bfa',
+    color: '#ce82ff',
   },
   {
     id: 'drawing',
@@ -185,7 +195,7 @@ export const BRANCH_PATHS: BranchPath[] = [
     emoji: '🎨',
     label: 'الرسم',
     description: 'تعبير إبداعي يفتح مناطق جديدة',
-    color: '#fb923c',
+    color: '#ff9600',
   },
   {
     id: 'writing',
@@ -193,7 +203,7 @@ export const BRANCH_PATHS: BranchPath[] = [
     emoji: '✍️',
     label: 'الكتابة',
     description: 'يومياتك، أفكارك، قصصك',
-    color: '#4ade80',
+    color: '#82c91e',
   },
 ];
 
