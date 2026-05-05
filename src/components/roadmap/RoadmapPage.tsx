@@ -53,6 +53,11 @@ export default function RoadmapPage() {
 
   const confettiColors = [COLORS.gold, COLORS.success, COLORS.primary, COLORS.goldLight, '#fb923c', '#ff6b6b', COLORS.primaryLight];
 
+  // Stable confetti positions (computed once per burst)
+  const confettiPositions = useMemo(() =>
+    Array.from({ length: 15 }).map(() => 25 + Math.random() * 50),
+  []);
+
   const handlePathSelect = useCallback((path: BranchPath) => {
     setSelectedPath(path);
     setShowConfetti(true);
@@ -368,7 +373,7 @@ export default function RoadmapPage() {
                     key={i}
                     delay={i * 0.04}
                     color={confettiColors[i % confettiColors.length]}
-                    left={25 + Math.random() * 50}
+                    left={confettiPositions[i]}
                   />
                 ))}
               </div>

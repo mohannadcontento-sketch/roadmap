@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, useInView, AnimatePresence } from 'framer-motion';
+import { motion, useInView } from 'framer-motion';
 import { useRef } from 'react';
 import Image from 'next/image';
 import { COLORS } from './types';
@@ -18,7 +18,7 @@ interface PathNodeProps {
 }
 
 export function PathNode({ node, position, index, onSelect, isSelected }: PathNodeProps) {
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: '-50px' });
 
   const isDone = node.status === 'done';
@@ -116,9 +116,11 @@ export function PathNode({ node, position, index, onSelect, isSelected }: PathNo
             ${isLocked ? 'opacity-40 grayscale-[0.5]' : ''}
           `}
           style={{
-            borderColor: getNodeBorder(),
+            borderColor: isSelected ? accentColor : getNodeBorder(),
             background: getNodeBg(),
-            boxShadow: getGlow(),
+            boxShadow: isSelected
+              ? `0 0 0 3px ${COLORS.bg}, 0 0 0 5px ${accentColor}, 0 0 30px ${accentColor}40`
+              : getGlow(),
           }}
         >
           {/* Inner gradient overlay */}
@@ -245,7 +247,7 @@ interface BranchSectionProps {
 }
 
 export function BranchSection({ paths, onSelectPath }: BranchSectionProps) {
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: '-40px' });
 
   return (
@@ -368,7 +370,7 @@ interface ConnectorProps {
 }
 
 export function Connector({ status, height = 'h-8 sm:h-14' }: ConnectorProps) {
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: '-15px' });
 
   const lineColor = status === 'done'
@@ -423,20 +425,19 @@ export function NodeDetail({ node, onClose }: NodeDetailProps) {
   const accentColor = isDone ? COLORS.success : isActive ? COLORS.gold : isMilestone ? COLORS.gold : COLORS.mid;
 
   return (
-    <AnimatePresence>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+      onClick={onClose}
+    >
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
-        onClick={onClose}
-      >
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        />
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+      />
 
         <motion.div
           initial={{ y: '100%' }}
@@ -574,7 +575,6 @@ export function NodeDetail({ node, onClose }: NodeDetailProps) {
             )}
           </div>
         </motion.div>
-      </motion.div>
-    </AnimatePresence>
+    </motion.div>
   );
 }
