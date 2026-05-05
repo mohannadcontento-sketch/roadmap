@@ -1,8 +1,10 @@
 'use client';
 
 import { motion, useInView, AnimatePresence } from 'framer-motion';
-import { useRef, useMemo } from 'react';
-import type { RoadmapNode, BranchPath, NodeStatus } from './types';
+import { useRef } from 'react';
+import Image from 'next/image';
+import { COLORS } from './types';
+import type { RoadmapNode, BranchPath } from './types';
 
 /* ────────────────────────────────────────
    PathNode - Individual circular node
@@ -17,15 +19,15 @@ interface PathNodeProps {
 
 export function PathNode({ node, position, index, onSelect, isSelected }: PathNodeProps) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '-60px' });
+  const isInView = useInView(ref, { once: true, margin: '-50px' });
 
   const isDone = node.status === 'done';
   const isActive = node.status === 'active';
   const isLocked = node.status === 'locked';
   const isMilestone = node.status === 'milestone';
 
-  const sizeClass = isMilestone ? 'w-[100px] h-[100px] sm:w-[120px] sm:h-[120px]' : 'w-[80px] h-[80px] sm:w-[96px] sm:h-[96px]';
-  const emojiSize = isMilestone ? 'text-[40px] sm:text-[48px]' : 'text-[32px] sm:text-[40px]';
+  const sizeClass = isMilestone ? 'w-[108px] h-[108px] sm:w-[130px] sm:h-[130px]' : 'w-[88px] h-[88px] sm:w-[104px] sm:h-[104px]';
+  const iconSize = isMilestone ? 56 : 44;
 
   const getOffsetClass = () => {
     if (position === -1) return 'mr-auto ml-0 sm:ml-0';
@@ -33,32 +35,47 @@ export function PathNode({ node, position, index, onSelect, isSelected }: PathNo
     return 'mx-auto';
   };
 
-  const borderColor = isDone ? 'border-emerald-400/80' : isActive ? 'border-sky-400/80' : isMilestone ? 'border-amber-400/80' : 'border-white/[0.08]';
-  const bgGradient = isDone
-    ? 'bg-gradient-to-br from-emerald-400/25 via-emerald-500/10 to-transparent'
+  const borderColor = isDone
+    ? `border-[${COLORS.success}]`
     : isActive
-    ? 'bg-gradient-to-br from-sky-400/25 via-sky-500/10 to-transparent'
+    ? `border-[${COLORS.primary}]`
     : isMilestone
-    ? 'bg-gradient-to-br from-amber-400/20 via-amber-500/8 to-transparent'
-    : 'bg-gradient-to-br from-white/[0.04] to-white/[0.01]';
+    ? `border-[${COLORS.gold}]`
+    : `border-[${COLORS.border}]`;
+
+  const bgGradient = isDone
+    ? `bg-gradient-to-br from-[${COLORS.success}]/30 via-[${COLORS.success}]/10 to-transparent`
+    : isActive
+    ? `bg-gradient-to-br from-[${COLORS.primary}]/30 via-[${COLORS.primary}]/10 to-transparent`
+    : isMilestone
+    ? `bg-gradient-to-br from-[${COLORS.gold}]/25 via-[${COLORS.gold}]/8 to-transparent`
+    : `bg-[${COLORS.bgCard}]`;
 
   const glowShadow = isDone
-    ? 'shadow-[0_0_40px_rgba(52,211,153,0.35),0_0_80px_rgba(52,211,153,0.1)]'
+    ? `shadow-[0_0_40px_rgba(78,205,196,0.3),0_0_80px_rgba(78,205,196,0.08)]`
     : isActive
-    ? 'shadow-[0_0_50px_rgba(56,189,248,0.4),0_0_100px_rgba(56,189,248,0.15)]'
+    ? `shadow-[0_0_50px_rgba(115,179,206,0.35),0_0_100px_rgba(115,179,206,0.12)]`
     : isMilestone
-    ? 'shadow-[0_0_40px_rgba(251,191,36,0.3),0_0_80px_rgba(251,191,36,0.08)]'
+    ? `shadow-[0_0_40px_rgba(232,185,49,0.25),0_0_80px_rgba(232,185,49,0.06)]`
     : '';
 
-  const labelColor = isDone ? 'text-emerald-300' : isActive ? 'text-sky-300' : isMilestone ? 'text-amber-300' : 'text-gray-600';
+  const labelColor = isDone
+    ? `text-[${COLORS.success}]`
+    : isActive
+    ? `text-[${COLORS.primary}]`
+    : isMilestone
+    ? `text-[${COLORS.gold}]`
+    : `text-[${COLORS.textMuted}]`;
+
+  const accentColor = isDone ? COLORS.success : isActive ? COLORS.primary : isMilestone ? COLORS.gold : COLORS.mid;
 
   return (
     <motion.div
       ref={ref}
       initial={{ opacity: 0, y: 50, scale: 0.7 }}
       animate={isInView ? { opacity: 1, y: 0, scale: 1 } : {}}
-      transition={{ duration: 0.7, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-      className={`flex flex-col items-center gap-2.5 sm:gap-3 ${getOffsetClass()} relative z-10 w-full max-w-[320px] sm:max-w-[380px]`}
+      transition={{ duration: 0.7, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
+      className={`flex flex-col items-center gap-2.5 sm:gap-3 ${getOffsetClass()} relative z-10 w-full max-w-[340px] sm:max-w-[400px]`}
       onClick={() => onSelect?.(node)}
     >
       {/* Week badge */}
@@ -67,7 +84,8 @@ export function PathNode({ node, position, index, onSelect, isSelected }: PathNo
           initial={{ opacity: 0, y: -8 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ delay: 0.4 }}
-          className="text-[10px] sm:text-[11px] font-mono tracking-widest text-gray-500/70 mb-0.5"
+          className="text-[10px] sm:text-[11px] font-mono tracking-widest font-medium mb-0.5"
+          style={{ color: COLORS.textMuted }}
         >
           {node.week}
         </motion.span>
@@ -75,17 +93,33 @@ export function PathNode({ node, position, index, onSelect, isSelected }: PathNo
 
       {/* Main circle */}
       <motion.div
-        whileHover={{ scale: isLocked ? 1 : 1.1 }}
-        whileTap={{ scale: isLocked ? 1 : 0.93 }}
+        whileHover={{ scale: isLocked ? 1 : 1.08 }}
+        whileTap={{ scale: isLocked ? 1 : 0.94 }}
         className={`
-          ${sizeClass} ${emojiSize} ${bgGradient} ${borderColor} ${glowShadow}
-          rounded-full flex items-center justify-center
-          border-[3px] sm:border-4 relative cursor-pointer
-          transition-colors duration-300
-          ${isLocked ? 'opacity-40 grayscale-[0.5]' : ''}
+          ${sizeClass} rounded-full flex items-center justify-center
+          border-[3px] sm:border-[3.5px] relative cursor-pointer
+          transition-all duration-300 overflow-hidden
+          ${isLocked ? 'opacity-35 grayscale-[0.6]' : ''}
           ${isActive ? 'animate-activeGlow' : ''}
-          ${isSelected ? 'ring-[3px] ring-white/15' : ''}
+          ${isSelected ? 'ring-[3px] ring-white/10' : ''}
         `}
+        style={{
+          borderColor: isDone ? COLORS.success : isActive ? COLORS.primary : isMilestone ? COLORS.gold : COLORS.border,
+          background: isDone
+            ? `linear-gradient(135deg, ${COLORS.success}30, ${COLORS.success}08, transparent)`
+            : isActive
+            ? `linear-gradient(135deg, ${COLORS.primary}30, ${COLORS.primary}08, transparent)`
+            : isMilestone
+            ? `linear-gradient(135deg, ${COLORS.gold}25, ${COLORS.gold}08, transparent)`
+            : COLORS.bgCard,
+          boxShadow: isDone
+            ? `0 0 40px ${COLORS.success}40, 0 0 80px ${COLORS.success}10`
+            : isActive
+            ? `0 0 50px ${COLORS.primary}45, 0 0 100px ${COLORS.primary}12`
+            : isMilestone
+            ? `0 0 40px ${COLORS.gold}35, 0 0 80px ${COLORS.gold}08`
+            : 'none',
+        }}
       >
         {/* Done checkmark */}
         {isDone && (
@@ -93,9 +127,13 @@ export function PathNode({ node, position, index, onSelect, isSelected }: PathNo
             initial={{ scale: 0, rotate: -90 }}
             animate={isInView ? { scale: 1, rotate: 0 } : {}}
             transition={{ type: 'spring', stiffness: 350, damping: 15, delay: 0.6 }}
-            className="absolute -top-1.5 -right-1.5 w-7 h-7 sm:w-8 sm:h-8 rounded-full 
-                       bg-emerald-500 flex items-center justify-center text-white text-xs sm:text-sm font-bold
-                       border-[3px] border-[#0B1120] shadow-lg shadow-emerald-500/30"
+            className="absolute -top-1 -right-1 w-7 h-7 sm:w-8 sm:h-8 rounded-full 
+                       flex items-center justify-center text-white text-xs sm:text-sm font-bold z-20"
+            style={{
+              backgroundColor: COLORS.success,
+              border: `3px solid ${COLORS.bg}`,
+              boxShadow: `0 2px 12px ${COLORS.success}50`,
+            }}
           >
             ✓
           </motion.div>
@@ -107,36 +145,54 @@ export function PathNode({ node, position, index, onSelect, isSelected }: PathNo
             <motion.div
               animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
               transition={{ duration: 2.5, repeat: Infinity, ease: 'easeOut' }}
-              className="absolute inset-0 rounded-full border-2 border-sky-400/40"
+              className="absolute inset-0 rounded-full"
+              style={{ border: `2px solid ${COLORS.primary}50` }}
             />
             <motion.div
               animate={{ scale: [1, 1.3], opacity: [0.3, 0] }}
               transition={{ duration: 2.5, repeat: Infinity, ease: 'easeOut', delay: 0.8 }}
-              className="absolute inset-0 rounded-full border border-sky-400/25"
+              className="absolute inset-0 rounded-full"
+              style={{ border: `1px solid ${COLORS.primary}30` }}
             />
           </>
         )}
 
-        {/* Milestone ring */}
+        {/* Milestone rotating ring */}
         {isMilestone && !isLocked && (
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-            className="absolute inset-[-4px] sm:inset-[-5px] rounded-full 
-                       border border-dashed border-amber-400/20"
+            className="absolute rounded-full"
+            style={{
+              inset: -5,
+              border: `1.5px dashed ${COLORS.gold}30`,
+            }}
           />
         )}
 
-        <span className="relative z-[1] select-none">{node.emoji}</span>
+        {/* 3D Icon */}
+        <div className="relative z-[1] flex items-center justify-center" style={{ width: iconSize, height: iconSize }}>
+          <Image
+            src={node.icon}
+            alt={node.label}
+            width={iconSize}
+            height={iconSize}
+            className="object-contain drop-shadow-lg"
+            priority={index < 3}
+          />
+        </div>
       </motion.div>
 
       {/* Labels */}
       <div className="flex flex-col items-center gap-0.5 text-center">
-        <span className={`text-[13px] sm:text-[15px] font-bold ${labelColor} leading-tight`}>
+        <span
+          className="text-[13px] sm:text-[15px] font-bold leading-tight"
+          style={{ color: isLocked ? COLORS.textMuted : accentColor }}
+        >
           {node.label}
         </span>
         {node.subtitle && (
-          <span className="text-[10px] sm:text-[11px] text-gray-500 font-medium">
+          <span className="text-[10px] sm:text-[11px] font-medium" style={{ color: COLORS.textMuted }}>
             {node.subtitle}
           </span>
         )}
@@ -147,15 +203,18 @@ export function PathNode({ node, position, index, onSelect, isSelected }: PathNo
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ delay: 0.55 }}
+          transition={{ delay: 0.5 }}
           className="flex flex-wrap justify-center gap-1.5 mt-1"
         >
           {node.tags.map((tag, i) => (
             <span
               key={i}
-              className="text-[9px] sm:text-[10px] px-2 py-[3px] rounded-full font-semibold
-                         bg-white/[0.05] text-gray-400/80 border border-white/[0.06]
-                         backdrop-blur-sm"
+              className="text-[9px] sm:text-[10px] px-2.5 py-[3px] rounded-full font-semibold"
+              style={{
+                background: `${accentColor}12`,
+                color: accentColor,
+                border: `1px solid ${accentColor}20`,
+              }}
             >
               {tag}
             </span>
@@ -176,7 +235,7 @@ interface BranchSectionProps {
 
 export function BranchSection({ paths, onSelectPath }: BranchSectionProps) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '-50px' });
+  const isInView = useInView(ref, { once: true, margin: '-40px' });
 
   return (
     <motion.div
@@ -186,61 +245,85 @@ export function BranchSection({ paths, onSelectPath }: BranchSectionProps) {
       transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
       className="relative z-10 my-6 sm:my-10 w-full"
     >
-      <div className="relative mx-auto max-w-[620px] sm:max-w-[720px]">
+      <div className="relative mx-auto max-w-[640px] sm:max-w-[740px]">
         {/* Outer glow */}
-        <div className="absolute -inset-1 rounded-[28px] bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-transparent blur-sm" />
+        <div
+          className="absolute -inset-1 rounded-[28px] blur-sm"
+          style={{ background: `linear-gradient(135deg, ${COLORS.primary}15, ${COLORS.mid}08, transparent)` }}
+        />
 
-        <div className="relative bg-[#0f1628]/90 backdrop-blur-xl border border-violet-400/[0.15] rounded-3xl p-5 sm:p-8 overflow-hidden">
-          {/* Decorative circles */}
-          <div className="absolute top-3 right-3 w-16 h-16 rounded-full bg-violet-500/[0.06]" />
-          <div className="absolute bottom-3 left-3 w-24 h-24 rounded-full bg-violet-500/[0.04]" />
+        <div
+          className="relative backdrop-blur-xl rounded-3xl p-5 sm:p-8 overflow-hidden"
+          style={{
+            backgroundColor: `${COLORS.bg}ee`,
+            border: `1px solid ${COLORS.primary}20`,
+          }}
+        >
+          {/* Decorative blobs */}
+          <div className="absolute top-3 right-3 w-20 h-20 rounded-full" style={{ background: `${COLORS.primary}08` }} />
+          <div className="absolute bottom-3 left-3 w-28 h-28 rounded-full" style={{ background: `${COLORS.mid}06` }} />
 
           {/* Title */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ delay: 0.25 }}
+            transition={{ delay: 0.2 }}
             className="text-center mb-5 sm:mb-7 relative z-10"
           >
-            <h3 className="text-lg sm:text-xl font-bold bg-gradient-to-l from-violet-300 to-purple-300 bg-clip-text text-transparent">
-              🗺️ اختار مسارك
+            <h3 className="text-lg sm:text-xl font-bold" style={{ color: COLORS.light }}>
+              اختار مسارك
             </h3>
-            <p className="text-[11px] sm:text-xs text-gray-500 mt-1">واحد من الخمسة — هويتك الجديدة تبدأ هنا</p>
+            <p className="text-[11px] sm:text-xs mt-1" style={{ color: COLORS.textMuted }}>
+              واحد من الخمسة — هويتك الجديدة تبدأ هنا
+            </p>
           </motion.div>
 
-          {/* Path circles */}
-          <div className="flex justify-center gap-3 sm:gap-5 relative z-10">
+          {/* Path cards */}
+          <div className="grid grid-cols-5 gap-2 sm:gap-4 relative z-10">
             {paths.map((path, i) => (
               <motion.div
                 key={path.id}
-                initial={{ opacity: 0, y: 35, scale: 0.5 }}
+                initial={{ opacity: 0, y: 30, scale: 0.5 }}
                 animate={isInView ? { opacity: 1, y: 0, scale: 1 } : {}}
-                transition={{ delay: 0.35 + i * 0.08, type: 'spring', stiffness: 200, damping: 18 }}
-                whileHover={{ scale: 1.12, y: -6 }}
-                whileTap={{ scale: 0.9 }}
+                transition={{ delay: 0.3 + i * 0.08, type: 'spring', stiffness: 200, damping: 18 }}
+                whileHover={{ scale: 1.08, y: -5 }}
+                whileTap={{ scale: 0.92 }}
                 onClick={() => onSelectPath?.(path)}
                 className="flex flex-col items-center gap-2 sm:gap-2.5 cursor-pointer group"
               >
                 <div
-                  className="w-[56px] h-[56px] sm:w-[68px] sm:h-[68px] rounded-full flex items-center justify-center
-                             text-[24px] sm:text-[28px] border-[2.5px] sm:border-3 transition-all duration-300
-                             relative overflow-hidden"
+                  className="w-[52px] h-[52px] sm:w-[64px] sm:h-[64px] rounded-2xl sm:rounded-2xl flex items-center justify-center
+                             border-[2px] transition-all duration-300 relative overflow-hidden"
                   style={{
-                    borderColor: path.color + '60',
-                    background: `linear-gradient(135deg, ${path.color}18, ${path.color}06)`,
+                    borderColor: `${path.color}50`,
+                    background: `linear-gradient(135deg, ${path.color}15, ${path.color}06)`,
                   }}
                 >
                   {/* Hover glow */}
                   <div
-                    className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                    style={{ boxShadow: `0 0 30px ${path.color}30, inset 0 0 20px ${path.color}10` }}
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl"
+                    style={{ boxShadow: `0 0 25px ${path.color}25, inset 0 0 15px ${path.color}08` }}
                   />
-                  <span className="relative z-10 select-none">{path.emoji}</span>
+                  <div className="relative z-10 w-8 h-8 sm:w-10 sm:h-10">
+                    <Image
+                      src={path.icon}
+                      alt={path.label}
+                      width={40}
+                      height={40}
+                      className="object-contain drop-shadow-md"
+                    />
+                  </div>
                 </div>
-                <span className="text-[11px] sm:text-[13px] font-bold text-gray-300 group-hover:text-white transition-colors">
+                <span
+                  className="text-[10px] sm:text-[12px] font-bold group-hover:text-white transition-colors"
+                  style={{ color: `${path.color}cc` }}
+                >
                   {path.label}
                 </span>
-                <span className="text-[8px] sm:text-[9px] text-gray-600 text-center leading-tight max-w-[70px] sm:max-w-[80px]">
+                <span
+                  className="text-[7px] sm:text-[9px] text-center leading-tight max-w-[60px] sm:max-w-[75px] hidden sm:block"
+                  style={{ color: COLORS.textMuted }}
+                >
                   {path.description}
                 </span>
               </motion.div>
@@ -262,23 +345,25 @@ interface ConnectorProps {
 
 export function Connector({ status, height = 'h-8 sm:h-14' }: ConnectorProps) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '-20px' });
+  const isInView = useInView(ref, { once: true, margin: '-15px' });
 
-  const gradientClass = status === 'done'
-    ? 'bg-gradient-to-b from-emerald-400/50 via-emerald-400/30 to-emerald-400/10'
+  const lineColor = status === 'done'
+    ? COLORS.success
     : status === 'active'
-    ? 'bg-gradient-to-b from-sky-400/40 via-sky-400/20 to-sky-400/8'
-    : 'bg-gradient-to-b from-white/[0.05] to-white/[0.02]';
+    ? COLORS.primary
+    : COLORS.border;
 
   return (
     <div className="relative w-full flex justify-center" ref={ref}>
-      {/* Dotted background line */}
-      <div className="absolute w-[2px] top-0 bottom-0 bg-white/[0.03]" />
+      <div className="absolute w-[1.5px] top-0 bottom-0" style={{ background: `${lineColor}15` }} />
       <motion.div
         initial={{ scaleY: 0 }}
         animate={isInView ? { scaleY: 1 } : {}}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className={`w-[3px] sm:w-[4px] ${height} ${gradientClass} rounded-full origin-top relative z-10`}
+        className={`w-[3px] sm:w-[3.5px] ${height} rounded-full origin-top relative z-10`}
+        style={{
+          background: `linear-gradient(to bottom, ${lineColor}60, ${lineColor}15, ${lineColor}05)`,
+        }}
       />
     </div>
   );
@@ -297,7 +382,7 @@ export function NodeDetail({ node, onClose }: NodeDetailProps) {
   const isActive = node.status === 'active';
   const isMilestone = node.status === 'milestone';
 
-  const accentColor = isDone ? '#34d399' : isActive ? '#38bdf8' : isMilestone ? '#fbbf24' : '#6b7280';
+  const accentColor = isDone ? COLORS.success : isActive ? COLORS.primary : isMilestone ? COLORS.gold : COLORS.mid;
 
   return (
     <AnimatePresence>
@@ -312,7 +397,7 @@ export function NodeDetail({ node, onClose }: NodeDetailProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-black/60 backdrop-blur-md"
+          className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         />
 
         <motion.div
@@ -321,40 +406,46 @@ export function NodeDetail({ node, onClose }: NodeDetailProps) {
           exit={{ y: '100%' }}
           transition={{ type: 'spring', damping: 30, stiffness: 300 }}
           onClick={(e) => e.stopPropagation()}
-          className="relative w-full max-w-md mx-4 mb-4 sm:mb-0 bg-[#151d30] border border-white/[0.08] rounded-3xl overflow-hidden shadow-2xl"
+          className="relative w-full max-w-md mx-4 mb-4 sm:mb-0 rounded-3xl overflow-hidden shadow-2xl"
+          style={{
+            backgroundColor: COLORS.bgLight,
+            border: `1px solid ${COLORS.border}`,
+          }}
         >
           {/* Accent top bar */}
-          <div className="h-1 w-full" style={{ background: `linear-gradient(to right, ${accentColor}, transparent)` }} />
+          <div className="h-1 w-full" style={{ background: `linear-gradient(to left, ${accentColor}, transparent)` }} />
 
-          {/* Handle */}
+          {/* Handle for mobile */}
           <div className="flex justify-center pt-3 pb-1 sm:hidden">
-            <div className="w-10 h-1 rounded-full bg-white/20" />
+            <div className="w-10 h-1 rounded-full" style={{ background: `${COLORS.primary}30` }} />
           </div>
 
           {/* Content */}
-          <div className="px-6 pb-6 pt-2">
+          <div className="px-5 sm:px-6 pb-6 pt-1">
             <div className="flex items-start gap-4 mb-4">
+              {/* Icon */}
               <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0"
+                className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden"
                 style={{
-                  background: `linear-gradient(135deg, ${accentColor}20, ${accentColor}08)`,
-                  border: `2px solid ${accentColor}40`,
+                  background: `linear-gradient(135deg, ${accentColor}18, ${accentColor}06)`,
+                  border: `2px solid ${accentColor}30`,
                 }}
               >
-                {node.emoji}
+                <Image src={node.icon} alt={node.label} width={44} height={44} className="object-contain" />
               </div>
+
               <div className="flex-1 min-w-0">
-                <h3 className="text-xl font-bold text-white leading-tight">{node.label}</h3>
+                <h3 className="text-xl font-bold leading-tight" style={{ color: COLORS.cream }}>{node.label}</h3>
                 {node.subtitle && (
-                  <p className="text-sm text-gray-400 mt-0.5">{node.subtitle}</p>
+                  <p className="text-sm mt-0.5" style={{ color: COLORS.textSecondary }}>{node.subtitle}</p>
                 )}
                 {node.week && (
                   <span
                     className="inline-block mt-2 text-[10px] font-mono px-2.5 py-0.5 rounded-full"
                     style={{
-                      background: `${accentColor}12`,
+                      background: `${accentColor}10`,
                       color: accentColor,
-                      border: `1px solid ${accentColor}20`,
+                      border: `1px solid ${accentColor}18`,
                     }}
                   >
                     {node.week}
@@ -363,19 +454,33 @@ export function NodeDetail({ node, onClose }: NodeDetailProps) {
               </div>
               <button
                 onClick={onClose}
-                className="w-8 h-8 rounded-full bg-white/[0.06] flex items-center justify-center text-gray-500 
-                           hover:text-white hover:bg-white/[0.12] transition-all flex-shrink-0 mt-1"
+                className="w-8 h-8 rounded-full flex items-center justify-center transition-all flex-shrink-0 mt-1"
+                style={{ background: `${COLORS.primary}10`, color: COLORS.textMuted }}
               >
                 ✕
               </button>
             </div>
 
+            {/* Character preview */}
+            {node.character && !node.status.includes('locked') && (
+              <div className="flex items-center gap-3 mb-4 p-3 rounded-2xl" style={{ background: `${COLORS.bg}80` }}>
+                <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
+                  <Image src={node.character} alt="character" width={40} height={40} className="object-contain" />
+                </div>
+                <p className="text-xs" style={{ color: COLORS.textSecondary }}>
+                  {isDone ? 'وصال بتشجعك — كمل كده!' : isActive ? 'وصال مستنية تبدأ — اضغط ابدأ الآن!' : 'وصال معاك طول الرحلة!'}
+                </p>
+              </div>
+            )}
+
             {node.description && (
-              <p className="text-sm text-gray-400 leading-relaxed mb-4">{node.description}</p>
+              <p className="text-sm leading-relaxed mb-4" style={{ color: COLORS.textSecondary }}>
+                {node.description}
+              </p>
             )}
 
             {node.tags && node.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 mb-2">
                 {node.tags.map((tag, i) => (
                   <span
                     key={i}
@@ -383,7 +488,7 @@ export function NodeDetail({ node, onClose }: NodeDetailProps) {
                     style={{
                       background: `${accentColor}10`,
                       color: accentColor,
-                      border: `1px solid ${accentColor}20`,
+                      border: `1px solid ${accentColor}18`,
                     }}
                   >
                     {tag}
@@ -397,13 +502,14 @@ export function NodeDetail({ node, onClose }: NodeDetailProps) {
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full mt-5 py-3 rounded-2xl font-bold text-sm text-white transition-all"
+                className="w-full mt-3 py-3.5 rounded-2xl font-bold text-sm transition-all"
                 style={{
-                  background: `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)`,
+                  background: `linear-gradient(135deg, ${accentColor}, ${accentColor}bb)`,
+                  color: COLORS.bg,
                   boxShadow: `0 4px 20px ${accentColor}30`,
                 }}
               >
-                ابدأ الآن →
+                ابدأ الآن ←
               </motion.button>
             )}
           </div>

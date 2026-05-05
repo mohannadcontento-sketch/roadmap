@@ -2,19 +2,21 @@
 
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { PathNode, BranchSection, Connector, NodeDetail } from './PathNode';
-import { ROADMAP_DATA, BRANCH_PATHS, NODE_POSITIONS } from './types';
+import { ROADMAP_DATA, BRANCH_PATHS, NODE_POSITIONS, COLORS } from './types';
 import type { RoadmapNode, BranchPath } from './types';
 import { useState, useRef, useCallback, useMemo } from 'react';
+import Image from 'next/image';
 
 /* ── Confetti particle ── */
 function ConfettiPiece({ delay, color, left }: { delay: number; color: string; left: number }) {
+  const xEnd = (Math.random() - 0.5) * 80;
   return (
     <motion.div
       initial={{ y: -20, x: 0, opacity: 1, rotate: 0 }}
       animate={{
-        y: [0, 30, 60, 100],
-        x: [0, (Math.random() - 0.5) * 40, (Math.random() - 0.5) * 60, (Math.random() - 0.5) * 80],
-        opacity: [1, 1, 0.6, 0],
+        y: [0, 25, 55, 90],
+        x: [0, xEnd * 0.5, xEnd * 0.8, xEnd],
+        opacity: [1, 1, 0.5, 0],
         rotate: [0, 180, 360, 540],
       }}
       transition={{ duration: 2.5, delay, ease: 'easeOut' }}
@@ -35,22 +37,21 @@ export default function RoadmapPage() {
     offset: ['start start', 'end end'],
   });
 
-  const headerOpacity = useTransform(scrollYProgress, [0, 0.05], [0.8, 1]);
-  const progressWidth = useTransform(scrollYProgress, [0, 1], ['22%', '100%']);
+  const headerBg = useTransform(scrollYProgress, [0, 0.03], [`${COLORS.bg}cc`, `${COLORS.bg}ee`]);
 
   // Stable star positions (computed once)
   const stars = useMemo(() =>
-    Array.from({ length: 50 }).map(() => ({
+    Array.from({ length: 35 }).map(() => ({
       top: Math.random() * 100,
       left: Math.random() * 100,
-      size: Math.random() * 2 + 1,
+      size: Math.random() * 2 + 0.8,
       duration: Math.random() * 4 + 2,
       delay: Math.random() * 4,
-      baseOpacity: Math.random() * 0.3 + 0.08,
+      baseOpacity: Math.random() * 0.15 + 0.05,
     })),
   []);
 
-  const confettiColors = ['#34d399', '#38bdf8', '#fbbf24', '#a78bfa', '#fb923c', '#f87171'];
+  const confettiColors = [COLORS.primary, COLORS.success, COLORS.gold, COLORS.light, '#fb923c', '#ff6b6b'];
 
   const handlePathSelect = useCallback((path: BranchPath) => {
     setSelectedPath(path);
@@ -104,45 +105,50 @@ export default function RoadmapPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#0B1120] overflow-hidden" dir="rtl">
+    <div className="relative min-h-screen overflow-hidden" dir="rtl" style={{ backgroundColor: COLORS.bg }}>
       {/* ═══════ Background ═══════ */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         {/* Gradient orbs */}
         <motion.div
           animate={{ x: [0, 30, -20, 0], y: [0, -20, 10, 0] }}
           transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-          className="absolute -top-32 right-[10%] w-[500px] h-[500px] rounded-full bg-sky-500/[0.05] blur-[100px]"
+          className="absolute -top-32 right-[10%] w-[500px] h-[500px] rounded-full blur-[100px]"
+          style={{ background: `${COLORS.primary}08` }}
         />
         <motion.div
           animate={{ x: [0, -25, 15, 0], y: [0, 15, -25, 0] }}
           transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
-          className="absolute top-[30%] left-[5%] w-[450px] h-[450px] rounded-full bg-violet-500/[0.04] blur-[90px]"
+          className="absolute top-[30%] left-[5%] w-[450px] h-[450px] rounded-full blur-[90px]"
+          style={{ background: `${COLORS.mid}06` }}
         />
         <motion.div
           animate={{ x: [0, 20, -10, 0], y: [0, 10, -15, 0] }}
           transition={{ duration: 22, repeat: Infinity, ease: 'linear' }}
-          className="absolute top-[60%] right-[20%] w-[400px] h-[400px] rounded-full bg-emerald-500/[0.04] blur-[80px]"
+          className="absolute top-[60%] right-[20%] w-[400px] h-[400px] rounded-full blur-[80px]"
+          style={{ background: `${COLORS.dark}10` }}
         />
         <motion.div
           animate={{ x: [0, -15, 20, 0], y: [0, -10, 20, 0] }}
           transition={{ duration: 28, repeat: Infinity, ease: 'linear' }}
-          className="absolute bottom-0 left-[30%] w-[500px] h-[300px] rounded-full bg-amber-500/[0.03] blur-[100px]"
+          className="absolute bottom-0 left-[30%] w-[500px] h-[300px] rounded-full blur-[100px]"
+          style={{ background: `${COLORS.gold}04` }}
         />
 
         {/* Stars */}
         {stars.map((star, i) => (
           <motion.div
             key={`star-${i}`}
-            className="absolute rounded-full bg-white"
+            className="absolute rounded-full"
             style={{
               top: `${star.top}%`,
               left: `${star.left}%`,
               width: star.size,
               height: star.size,
+              backgroundColor: COLORS.light,
             }}
             animate={{
-              opacity: [star.baseOpacity, star.baseOpacity + 0.2, star.baseOpacity],
-              scale: [1, 1.4, 1],
+              opacity: [star.baseOpacity, star.baseOpacity + 0.12, star.baseOpacity],
+              scale: [1, 1.3, 1],
             }}
             transition={{
               duration: star.duration,
@@ -153,10 +159,12 @@ export default function RoadmapPage() {
           />
         ))}
 
-        {/* Subtle noise texture */}
-        <div className="absolute inset-0 opacity-[0.012]"
+        {/* Subtle grid */}
+        <div
+          className="absolute inset-0 opacity-[0.02]"
           style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E")`,
+            backgroundImage: `linear-gradient(${COLORS.light}20 1px, transparent 1px), linear-gradient(90deg, ${COLORS.light}20 1px, transparent 1px)`,
+            backgroundSize: '50px 50px',
           }}
         />
       </div>
@@ -168,24 +176,26 @@ export default function RoadmapPage() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: 'easeOut' }}
-          className="sticky top-0 z-40 backdrop-blur-2xl bg-[#0B1120]/75 border-b border-white/[0.05]"
-          style={{ opacity: headerOpacity }}
+          className="sticky top-0 z-40 backdrop-blur-2xl border-b"
+          style={{ backgroundColor: headerBg, borderColor: COLORS.border }}
         >
           <div className="max-w-2xl mx-auto px-4 sm:px-6 py-2.5 sm:py-3.5 flex items-center justify-between">
-            {/* Logo */}
+            {/* Logo + Mascot */}
             <div className="flex items-center gap-2.5 sm:gap-3">
               <motion.div
-                whileHover={{ rotate: [0, -10, 10, 0] }}
-                className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl 
-                           bg-gradient-to-br from-emerald-400 to-teal-500 
-                           flex items-center justify-center text-lg sm:text-xl 
-                           shadow-lg shadow-emerald-500/25 flex-shrink-0"
+                whileHover={{ scale: 1.05, rotate: [-3, 3, 0] }}
+                className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl flex-shrink-0 overflow-hidden"
+                style={{
+                  background: `linear-gradient(135deg, ${COLORS.primary}30, ${COLORS.dark}40)`,
+                  border: `2px solid ${COLORS.primary}30`,
+                  boxShadow: `0 2px 15px ${COLORS.primary}15`,
+                }}
               >
-                🦉
+                <Image src="/roadmap/characters/mascot.png" alt="وصال" width={44} height={44} className="object-cover" />
               </motion.div>
               <div className="leading-tight">
-                <h1 className="text-[14px] sm:text-[16px] font-bold text-white">وصال</h1>
-                <p className="text-[9px] sm:text-[10px] text-gray-500 font-medium">رود ماب التعافي</p>
+                <h1 className="text-[14px] sm:text-[16px] font-bold" style={{ color: COLORS.cream }}>وصال</h1>
+                <p className="text-[9px] sm:text-[10px] font-medium" style={{ color: COLORS.textMuted }}>رود ماب التعافي</p>
               </div>
             </div>
 
@@ -194,31 +204,31 @@ export default function RoadmapPage() {
               {/* Streak */}
               <motion.div
                 whileHover={{ scale: 1.05 }}
-                className="flex items-center gap-1 sm:gap-1.5 bg-gradient-to-l from-orange-500/10 to-red-500/10 
-                           border border-orange-500/15 rounded-full pl-2.5 pr-2 sm:pl-3 sm:pr-2.5 py-1 sm:py-1.5"
+                className="flex items-center gap-1 sm:gap-1.5 rounded-full pl-2.5 pr-2 sm:pl-3 sm:pr-2.5 py-1 sm:py-1.5"
+                style={{ background: `${COLORS.gold}10`, border: `1px solid ${COLORS.gold}18` }}
               >
                 <span className="text-[11px] sm:text-xs">🔥</span>
-                <span className="text-[11px] sm:text-[13px] font-bold text-orange-300 tabular-nums">7</span>
+                <span className="text-[11px] sm:text-[13px] font-bold tabular-nums" style={{ color: COLORS.gold }}>7</span>
               </motion.div>
 
               {/* Gems */}
               <motion.div
                 whileHover={{ scale: 1.05 }}
-                className="flex items-center gap-1 sm:gap-1.5 bg-sky-500/10 border border-sky-500/15 
-                           rounded-full pl-2.5 pr-2 sm:pl-3 sm:pr-2.5 py-1 sm:py-1.5"
+                className="flex items-center gap-1 sm:gap-1.5 rounded-full pl-2.5 pr-2 sm:pl-3 sm:pr-2.5 py-1 sm:py-1.5"
+                style={{ background: `${COLORS.primary}10`, border: `1px solid ${COLORS.primary}18` }}
               >
                 <span className="text-[11px] sm:text-xs">💎</span>
-                <span className="text-[11px] sm:text-[13px] font-bold text-sky-300 tabular-nums">350</span>
+                <span className="text-[11px] sm:text-[13px] font-bold tabular-nums" style={{ color: COLORS.primary }}>350</span>
               </motion.div>
 
               {/* Level */}
               <motion.div
                 whileHover={{ scale: 1.05 }}
-                className="hidden sm:flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/15 
-                           rounded-full pl-3 pr-2.5 py-1.5"
+                className="hidden sm:flex items-center gap-1.5 rounded-full pl-3 pr-2.5 py-1.5"
+                style={{ background: `${COLORS.success}10`, border: `1px solid ${COLORS.success}18` }}
               >
                 <span className="text-xs">⚡</span>
-                <span className="text-[13px] font-bold text-amber-300">Lv.3</span>
+                <span className="text-[13px] font-bold" style={{ color: COLORS.success }}>Lv.3</span>
               </motion.div>
             </div>
           </div>
@@ -232,36 +242,53 @@ export default function RoadmapPage() {
             transition={{ delay: 0.3 }}
             className="flex items-center gap-2.5 sm:gap-3"
           >
-            <span className="text-[10px] sm:text-[11px] text-gray-600 font-medium whitespace-nowrap">التقدم</span>
-            <div className="flex-1 h-[6px] sm:h-[7px] rounded-full bg-white/[0.05] overflow-hidden">
+            <span className="text-[10px] sm:text-[11px] font-medium whitespace-nowrap" style={{ color: COLORS.textMuted }}>التقدم</span>
+            <div className="flex-1 h-[6px] sm:h-[7px] rounded-full overflow-hidden" style={{ background: `${COLORS.border}60` }}>
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: '22%' }}
                 transition={{ duration: 1.8, ease: [0.22, 1, 0.36, 1], delay: 0.6 }}
                 className="h-full rounded-full relative overflow-hidden"
               >
-                <div className="absolute inset-0 bg-gradient-to-l from-emerald-400 via-teal-400 to-sky-400" />
+                <div
+                  className="absolute inset-0"
+                  style={{ background: `linear-gradient(to left, ${COLORS.success}, ${COLORS.primary})` }}
+                />
                 <motion.div
                   animate={{ x: ['-100%', '200%'] }}
                   transition={{ duration: 2, repeat: Infinity, repeatDelay: 1, ease: 'easeInOut' }}
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                  className="absolute inset-0"
+                  style={{ background: `linear-gradient(to right, transparent, ${COLORS.light}25, transparent)` }}
                 />
               </motion.div>
             </div>
-            <span className="text-[10px] sm:text-[11px] text-gray-600 font-medium tabular-nums">٢/١٠</span>
+            <span className="text-[10px] sm:text-[11px] font-medium tabular-nums" style={{ color: COLORS.textMuted }}>٢/١٠</span>
           </motion.div>
         </div>
 
-        {/* ── Welcome message ── */}
+        {/* ── Welcome + Mascot ── */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.6 }}
-          className="max-w-2xl mx-auto px-4 sm:px-6 pt-5 sm:pt-6 pb-2 text-center"
+          className="max-w-2xl mx-auto px-4 sm:px-6 pt-5 sm:pt-6 pb-2"
         >
-          <p className="text-[12px] sm:text-sm text-gray-500 leading-relaxed">
-            مرحبًا! رحلتك بدأت — كمّل الخطوات واحدة واحدة ووصل لنهاية الرحلة 🌱
-          </p>
+          <div
+            className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl sm:rounded-3xl"
+            style={{ background: `${COLORS.bgLight}90`, border: `1px solid ${COLORS.border}` }}
+          >
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl overflow-hidden flex-shrink-0">
+              <Image src="/roadmap/characters/mascot.png" alt="وصال" width={56} height={56} className="object-cover" />
+            </div>
+            <div>
+              <p className="text-[12px] sm:text-sm leading-relaxed" style={{ color: COLORS.textSecondary }}>
+                مرحبًا! أنا <span className="font-bold" style={{ color: COLORS.cream }}>وصال</span> — رحلتك بدأت!
+              </p>
+              <p className="text-[10px] sm:text-[11px] mt-0.5" style={{ color: COLORS.textMuted }}>
+                كمّل الخطوات واحدة واحدة ووصل لنهاية الرحلة
+              </p>
+            </div>
+          </div>
         </motion.div>
 
         {/* ═══ Roadmap Path ═══ */}
@@ -279,16 +306,18 @@ export default function RoadmapPage() {
             className="flex flex-col items-center gap-3 mt-10"
           >
             <motion.div
-              animate={{ opacity: [0.3, 0.6, 0.3] }}
+              animate={{ opacity: [0.2, 0.5, 0.2] }}
               transition={{ duration: 3, repeat: Infinity }}
-              className="w-[3px] h-12 bg-gradient-to-b from-white/[0.08] to-transparent"
+              className="w-[3px] h-12"
+              style={{ background: `linear-gradient(to bottom, ${COLORS.primary}20, transparent)` }}
             />
             <motion.p
               animate={{ opacity: [0.3, 0.6, 0.3] }}
               transition={{ duration: 3, repeat: Infinity, delay: 0.5 }}
-              className="text-[11px] text-gray-600 font-medium"
+              className="text-[11px] font-medium"
+              style={{ color: COLORS.textMuted }}
             >
-              🔮 نهاية الرحلة
+              نهاية الرحلة
             </motion.p>
           </motion.div>
         </main>
@@ -330,25 +359,25 @@ export default function RoadmapPage() {
               className="flex items-center gap-3 sm:gap-4 px-5 sm:px-6 py-3.5 sm:py-4 rounded-2xl sm:rounded-3xl 
                          border shadow-2xl backdrop-blur-2xl max-w-[90vw]"
               style={{
-                background: `linear-gradient(135deg, ${selectedPath.color}18, ${selectedPath.color}08)`,
-                borderColor: `${selectedPath.color}35`,
-                boxShadow: `0 8px 40px ${selectedPath.color}15, 0 0 0 1px ${selectedPath.color}10`,
+                background: `linear-gradient(135deg, ${selectedPath.color}15, ${selectedPath.color}08)`,
+                borderColor: `${selectedPath.color}30`,
+                boxShadow: `0 8px 40px ${selectedPath.color}12, 0 0 0 1px ${selectedPath.color}08`,
               }}
             >
               <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
+                className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0"
                 style={{
-                  background: `${selectedPath.color}15`,
-                  border: `1.5px solid ${selectedPath.color}30`,
+                  background: `${selectedPath.color}12`,
+                  border: `1.5px solid ${selectedPath.color}25`,
                 }}
               >
-                {selectedPath.emoji}
+                <Image src={selectedPath.icon} alt={selectedPath.label} width={48} height={48} className="object-contain p-1" />
               </div>
               <div className="min-w-0">
-                <p className="text-sm sm:text-[15px] font-bold text-white">مسار {selectedPath.label}</p>
-                <p className="text-[11px] sm:text-xs text-gray-400">{selectedPath.description}</p>
+                <p className="text-sm sm:text-[15px] font-bold" style={{ color: COLORS.cream }}>مسار {selectedPath.label}</p>
+                <p className="text-[11px] sm:text-xs" style={{ color: COLORS.textSecondary }}>{selectedPath.description}</p>
               </div>
-              <span className="text-[9px] sm:text-[10px] text-gray-600 mr-1 sm:mr-2 whitespace-nowrap hidden sm:block">
+              <span className="text-[9px] sm:text-[10px] mr-1 sm:mr-2 whitespace-nowrap hidden sm:block" style={{ color: COLORS.textMuted }}>
                 اضغط للإغلاق
               </span>
             </div>
