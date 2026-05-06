@@ -1,12 +1,7 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -28,9 +23,35 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
+      <head>
+        <link
+          rel="preload"
+          href="/fonts/Felfel-Bold.woff2"
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
+        />
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
+              @font-face {
+                font-family: 'Felfel';
+                src: url('/fonts/Felfel-Bold.woff2') format('woff2');
+                font-weight: 700;
+                font-style: normal;
+                font-display: swap;
+              }
+            `,
+          }}
+        />
+      </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        style={{ background: '#0f1f2e', color: '#f8f5f0' }}
+        className={`${geistMono.variable} antialiased`}
+        style={{
+          background: '#0f1f2e',
+          color: '#f8f5f0',
+          fontFamily: "'Felfel', 'Segoe UI', Tahoma, sans-serif",
+        }}
       >
         {children}
         <Toaster />
