@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
+import { Volume2, VolumeX } from 'lucide-react';
 
 interface OnboardingFlowProps {
   onComplete: () => void;
@@ -21,35 +22,87 @@ interface WelcomeMessage {
 const DEFAULT_MESSAGES: WelcomeMessage[] = [
   {
     id: '1',
-    title: 'أهلاً بيك! 🎉',
-    message: 'أنا وصال! مبسوط جداً إنك بدأت رحلة التعافي معانا. خلينا نتعرف على بعض.',
+    title: 'مرحباً بيك في وصال! 🌟',
+    message: 'أهلاً وسهلاً بيك في رحلتك نحو التحرر من التعفن الدماغي. أنا هنا ندعمك في كل خطوة. هذا البرنامج مصمم خصيصاً لمساعدتك على استعادة تركيزك وإنتاجيتك والسيطرة على وقتك. أنت لحد وحدك في هذه الرحلة!',
     sortOrder: 0,
   },
   {
     id: '2',
-    title: 'إيه هو التعفن الدماغي؟ 🧠',
-    message: 'التعفن الدماغي بيحصل لما بنقضي وقت كتير على المحتوى الرقمي السريع — فيديوهات قصيرة، سكرول بلا هدف، وأشياء بتمتص طاقتنا من غير ما ناخد بالنا.',
+    title: 'التعفن الدماغي - ما هو؟ 🧠',
+    message: 'التعفن الدماغي هو مصطلح يصف الحالة التي يصبح فيها عقلك مهووساً بالمحتوى الترفيهي السطحي مثل فيديوهات التيك توك والريلز القصيرة والميمز. ينتج عن ذلك ضعف في التركيز، انخفاض في القدرة على التفكير العميق، وقلة الإنتاجية. لكن الحل موجود وبإمكانك التعافي!',
     sortOrder: 1,
   },
   {
     id: '3',
-    title: 'ليه أنت هنا؟ 💪',
-    message: 'أنت لسه مش بتاخد بالك — بس الحقيقة إنك واخد خطوة مهمة جداً. أول خطوة في التغيير هي الوعي، وأنت وصلت ليها!',
+    title: 'كيف سيساعدك هذا البرنامج؟ 💪',
+    message: 'خلال ١٢ أسبوعاً، ستمر برحلة منظمة تشمل: الوعي بالمشكلة، التخلص التدريجي من المحتوى السلبي، بناء عادات صحية بديلة، تطوير مهارات التفكير النقدي والقراءة، تعلم الإنتاجية الحقيقية، وتحسين علاقاتك الاجتماعية. كل يوم فيه محتوى تعليمي وتمارين عملية وتحديات ممتعة. جهز نفسك للتغيير!',
     sortOrder: 2,
   },
-  {
-    id: '4',
-    title: 'الرحلة إزاي؟ 🗺️',
-    message: 'رحلتك هتكون ٣ أشهر. كل يوم هتلاقي محتوى صغير — فيديو، تحدي، أو مهمة. كل يوم بيكسبك XP وهتلاقي نفسك بتتغير!',
-    sortOrder: 3,
-  },
-  {
-    id: '5',
-    title: 'يلا نبدأ! 🚀',
-    message: 'مستنية تيك تيك تيك... أكدت على "يلا" عشان نبدأ رحلتك الحقيقية!',
-    sortOrder: 4,
-  },
 ];
+
+/* ═══════════════════════════════════════
+   TTS Hook - Text to Speech with Arabic
+   ═══════════════════════════════════════ */
+function useTTS() {
+  const [muted, setMuted] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  const speak = useCallback((text: string) => {
+    if (muted || typeof window === 'undefined' || !window.speechSynthesis) return;
+
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'ar-SA';
+    utterance.rate = 0.9;
+    utterance.pitch = 1.1;
+    utterance.volume = 1;
+
+    // Try to find an Arabic voice
+    const voices = window.speechSynthesis.getVoices();
+    const arabicVoice = voices.find(v => v.lang.startsWith('ar'));
+    if (arabicVoice) {
+      utterance.voice = arabicVoice;
+    }
+
+    utterance.onstart = () => setSpeaking(true);
+    utterance.onend = () => setSpeaking(false);
+    utterance.onerror = () => setSpeaking(false);
+
+    utteranceRef.current = utterance;
+    window.speechSynthesis.speak(utterance);
+  }, [muted]);
+
+  const stop = useCallback(() => {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      setSpeaking(false);
+    }
+  }, []);
+
+  const toggleMute = useCallback(() => {
+    setMuted(prev => {
+      if (!prev) {
+        // Unmuting - stop current speech
+        stop();
+      }
+      return !prev;
+    });
+  }, [stop]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  return { speak, stop, muted, speaking, toggleMute };
+}
 
 /* ═══════════════════════════════════════
    Typing Animation Hook
@@ -82,10 +135,9 @@ function useTypingEffect(text: string, speed: number = 20) {
 /* ═══════════════════════════════════════
    Speech Bubble Component
    ═══════════════════════════════════════ */
-function SpeechBubble({ message, isTyping }: { message: string; isTyping: boolean }) {
+function SpeechBubble({ message, isTyping, speaking }: { message: string; isTyping: boolean; speaking: boolean }) {
   return (
     <div className="relative">
-      {/* Bubble */}
       <motion.div
         initial={{ opacity: 0, scale: 0.9, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -93,10 +145,28 @@ function SpeechBubble({ message, isTyping }: { message: string; isTyping: boolea
         className="relative px-5 py-4 rounded-2xl rounded-br-md"
         style={{
           background: 'linear-gradient(145deg, #1a3347, #162d40)',
-          border: '1px solid rgba(88,196,220,0.2)',
-          boxShadow: '0 8px 30px rgba(0,0,0,0.3)',
+          border: `2px solid ${speaking ? 'rgba(255,200,0,0.3)' : 'rgba(88,196,220,0.2)'}`,
+          boxShadow: speaking
+            ? '0 0 30px rgba(255,200,0,0.15), 0 8px 30px rgba(0,0,0,0.3)'
+            : '0 8px 30px rgba(0,0,0,0.3)',
         }}
       >
+        {/* Sound wave indicator when speaking */}
+        {speaking && (
+          <div className="flex items-center gap-1 mb-2">
+            {[0, 1, 2, 3, 4].map(i => (
+              <motion.div
+                key={i}
+                animate={{ height: [4, 12 + Math.random() * 8, 4] }}
+                transition={{ duration: 0.4 + i * 0.1, repeat: Infinity, ease: 'easeInOut', delay: i * 0.05 }}
+                className="w-[3px] rounded-full"
+                style={{ background: '#ffc800' }}
+              />
+            ))}
+            <span className="text-[10px] font-bold mr-2" style={{ color: '#ffc800' }}>جاري التحدث...</span>
+          </div>
+        )}
+
         <p className="text-sm sm:text-base leading-relaxed font-medium" style={{ color: '#f8f5f0' }}>
           {message}
           {isTyping && (
@@ -144,6 +214,8 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   const [messages, setMessages] = useState<WelcomeMessage[]>(DEFAULT_MESSAGES);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const { speak, stop, muted, speaking, toggleMute } = useTTS();
+  const hasSpokenRef = useRef<string | null>(null);
 
   // Fetch welcome messages from API
   useEffect(() => {
@@ -169,13 +241,28 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   const { displayed, isDone } = useTypingEffect(currentMsg?.message || '', 25);
   const isLast = currentIndex === messages.length - 1;
 
+  // Speak the message when typing is done (only once per message)
+  useEffect(() => {
+    if (isDone && currentMsg && hasSpokenRef.current !== currentMsg.id) {
+      hasSpokenRef.current = currentMsg.id;
+      // Small delay before speaking so user sees the full text first
+      const timer = setTimeout(() => {
+        speak(currentMsg.title + '. ' + currentMsg.message);
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [isDone, currentMsg, speak]);
+
   const handleNext = useCallback(() => {
+    stop(); // Stop any ongoing speech
+    hasSpokenRef.current = null; // Reset for next message
+
     if (isLast) {
       onComplete();
     } else {
       setCurrentIndex((prev) => prev + 1);
     }
-  }, [isLast, onComplete]);
+  }, [isLast, onComplete, stop]);
 
   if (isLoading) {
     return (
@@ -233,18 +320,40 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
         >
           وصال
         </motion.h2>
-        <motion.span
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="text-xs font-bold px-3 py-1 rounded-full"
-          style={{
-            background: 'rgba(88,196,220,0.1)',
-            color: '#58c4dc',
-            border: '1px solid rgba(88,196,220,0.15)',
-          }}
-        >
-          {currentIndex + 1} / {messages.length}
-        </motion.span>
+        <div className="flex items-center gap-3">
+          {/* Mute/Unmute button */}
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={toggleMute}
+            className="w-10 h-10 rounded-xl flex items-center justify-center"
+            style={{
+              background: muted ? 'rgba(255,75,75,0.1)' : 'rgba(255,200,0,0.1)',
+              border: muted ? '1px solid rgba(255,75,75,0.2)' : '1px solid rgba(255,200,0,0.2)',
+            }}
+          >
+            {muted ? (
+              <VolumeX className="w-4 h-4" style={{ color: '#ff4b4b' }} />
+            ) : (
+              <motion.div animate={speaking ? { scale: [1, 1.2, 1] } : {}} transition={{ duration: 0.8, repeat: Infinity }}>
+                <Volume2 className="w-4 h-4" style={{ color: '#ffc800' }} />
+              </motion.div>
+            )}
+          </motion.button>
+
+          <motion.span
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="text-xs font-bold px-3 py-1 rounded-full"
+            style={{
+              background: 'rgba(88,196,220,0.1)',
+              color: '#58c4dc',
+              border: '1px solid rgba(88,196,220,0.15)',
+            }}
+          >
+            {currentIndex + 1} / {messages.length}
+          </motion.span>
+        </div>
       </div>
 
       {/* Main content */}
@@ -260,16 +369,20 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
           >
             {/* Mascot */}
             <motion.div
-              animate={{ y: [0, -8, 0] }}
-              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+              animate={speaking ? { y: [0, -5, 0], rotate: [-2, 2, -2, 0] } : { y: [0, -8, 0] }}
+              transition={{ duration: speaking ? 1.5 : 3, repeat: Infinity, ease: 'easeInOut' }}
               className="relative"
             >
               <div
                 className="w-32 h-32 sm:w-40 sm:h-40 rounded-3xl flex items-center justify-center overflow-hidden"
                 style={{
-                  background: 'linear-gradient(145deg, #1a3347, #162d40)',
-                  border: '2px solid rgba(88,196,220,0.2)',
-                  boxShadow: '0 8px 30px rgba(0,0,0,0.3), 0 0 40px rgba(88,196,220,0.08)',
+                  background: speaking
+                    ? 'linear-gradient(145deg, rgba(255,200,0,0.15), #1a3347)'
+                    : 'linear-gradient(145deg, #1a3347, #162d40)',
+                  border: `2px solid ${speaking ? 'rgba(255,200,0,0.35)' : 'rgba(88,196,220,0.2)'}`,
+                  boxShadow: speaking
+                    ? '0 8px 30px rgba(0,0,0,0.3), 0 0 40px rgba(255,200,0,0.15)'
+                    : '0 8px 30px rgba(0,0,0,0.3), 0 0 40px rgba(88,196,220,0.08)',
                 }}
               >
                 <Image
@@ -311,7 +424,7 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
 
             {/* Speech bubble */}
             <div className="w-full">
-              <SpeechBubble message={displayed} isTyping={!isDone} />
+              <SpeechBubble message={displayed} isTyping={!isDone} speaking={speaking} />
             </div>
 
             {/* Progress dots */}

@@ -648,15 +648,15 @@ export default function ProgressPage() {
             <span className="text-[10px] font-bold" style={{ color: '#58c4dc' }}>التقدم</span>
           </Link>
 
-          <button className="flex flex-col items-center gap-1 px-4 py-2">
+          <Link href="/shares" className="flex flex-col items-center gap-1 px-4 py-2">
             <div
               className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{ background: 'rgba(88,196,220,0.04)', border: '1px solid rgba(88,196,220,0.08)' }}
+              style={{ background: 'rgba(255,200,0,0.08)', border: '1px solid rgba(255,200,0,0.12)' }}
             >
-              <Star className="w-5 h-5" style={{ color: '#5a7f8f' }} />
+              <Share2 className="w-5 h-5" style={{ color: '#ffc800' }} />
             </div>
-            <span className="text-[10px] font-bold" style={{ color: '#5a7f8f' }}>الملف</span>
-          </button>
+            <span className="text-[10px] font-bold" style={{ color: '#5a7f8f' }}>المشاركات</span>
+          </Link>
         </div>
       </motion.div>
     </div>
