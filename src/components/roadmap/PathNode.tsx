@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, useInView } from 'framer-motion';
-import { useRef } from 'react';
+import { useRef, memo, useMemo } from 'react';
 import Image from 'next/image';
 import { COLORS } from './types';
 import type { RoadmapNode, BranchPath } from './types';
@@ -17,7 +17,7 @@ interface PathNodeProps {
   isSelected?: boolean;
 }
 
-export function PathNode({ node, position, index, onSelect, isSelected }: PathNodeProps) {
+export const PathNode = memo(function PathNode({ node, position, index, onSelect, isSelected }: PathNodeProps) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: '-50px' });
 
@@ -29,34 +29,34 @@ export function PathNode({ node, position, index, onSelect, isSelected }: PathNo
   const sizeClass = isMilestone ? 'w-[112px] h-[112px] sm:w-[136px] sm:h-[136px]' : 'w-[92px] h-[92px] sm:w-[108px] sm:h-[108px]';
   const iconSize = isMilestone ? 60 : 46;
 
-  const getOffsetClass = () => {
+  const offsetClass = useMemo(() => {
     if (position === -1) return 'mr-auto ml-0 sm:ml-0';
     if (position === 1) return 'ml-auto mr-0 sm:mr-0';
     return 'mx-auto';
-  };
+  }, [position]);
 
   const accentColor = isDone ? COLORS.success : isActive ? COLORS.gold : isMilestone ? COLORS.gold : COLORS.mid;
 
-  const getNodeBg = () => {
+  const nodeBg = useMemo(() => {
     if (isDone) return `linear-gradient(145deg, ${COLORS.successDark}cc, ${COLORS.bgCard})`;
     if (isActive) return `linear-gradient(145deg, ${COLORS.goldDark}cc, ${COLORS.bgCard})`;
     if (isMilestone) return `linear-gradient(145deg, ${COLORS.gold}99, ${COLORS.bgCard})`;
     return `linear-gradient(145deg, ${COLORS.bgCardHover}, ${COLORS.lockedBg})`;
-  };
+  }, [isDone, isActive, isMilestone]);
 
-  const getNodeBorder = () => {
+  const nodeBorder = useMemo(() => {
     if (isDone) return COLORS.success;
     if (isActive) return COLORS.gold;
     if (isMilestone) return COLORS.goldLight;
     return COLORS.lockedBorder;
-  };
+  }, [isDone, isActive, isMilestone]);
 
-  const getGlow = () => {
+  const nodeGlow = useMemo(() => {
     if (isDone) return `0 0 30px ${COLORS.success}40, 0 0 60px ${COLORS.success}15, 0 8px 25px ${COLORS.nodeShadow}`;
     if (isActive) return `0 0 35px ${COLORS.gold}50, 0 0 70px ${COLORS.gold}20, 0 8px 25px ${COLORS.nodeShadow}`;
     if (isMilestone) return `0 0 30px ${COLORS.gold}35, 0 0 60px ${COLORS.gold}10, 0 8px 25px ${COLORS.nodeShadow}`;
     return `0 4px 15px ${COLORS.nodeShadow}`;
-  };
+  }, [isDone, isActive, isMilestone]);
 
   return (
     <motion.div
@@ -64,7 +64,7 @@ export function PathNode({ node, position, index, onSelect, isSelected }: PathNo
       initial={{ opacity: 0, y: 60, scale: 0.6 }}
       animate={isInView ? { opacity: 1, y: 0, scale: 1 } : {}}
       transition={{ duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-      className={`flex flex-col items-center gap-2 sm:gap-3 ${getOffsetClass()} relative z-10 w-full max-w-[360px] sm:max-w-[420px]`}
+      className={`flex flex-col items-center gap-2 sm:gap-3 ${offsetClass} relative z-10 w-full max-w-[360px] sm:max-w-[420px]`}
       onClick={() => onSelect?.(node)}
     >
       {/* Week badge */}
@@ -116,11 +116,11 @@ export function PathNode({ node, position, index, onSelect, isSelected }: PathNo
             ${isLocked ? 'opacity-40 grayscale-[0.5]' : ''}
           `}
           style={{
-            borderColor: isSelected ? accentColor : getNodeBorder(),
-            background: getNodeBg(),
+            borderColor: isSelected ? accentColor : nodeBorder,
+            background: nodeBg,
             boxShadow: isSelected
               ? `0 0 0 3px ${COLORS.bg}, 0 0 0 5px ${accentColor}, 0 0 30px ${accentColor}40`
-              : getGlow(),
+              : nodeGlow,
           }}
         >
           {/* Inner gradient overlay */}
@@ -236,7 +236,7 @@ export function PathNode({ node, position, index, onSelect, isSelected }: PathNo
       )}
     </motion.div>
   );
-}
+});
 
 /* ────────────────────────────────────────
    BranchSection - Path selection area
@@ -246,7 +246,7 @@ interface BranchSectionProps {
   onSelectPath?: (path: BranchPath) => void;
 }
 
-export function BranchSection({ paths, onSelectPath }: BranchSectionProps) {
+export const BranchSection = memo(function BranchSection({ paths, onSelectPath }: BranchSectionProps) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: '-40px' });
 
@@ -359,7 +359,7 @@ export function BranchSection({ paths, onSelectPath }: BranchSectionProps) {
       </div>
     </motion.div>
   );
-}
+});
 
 /* ────────────────────────────────────────
    Connector - Line between nodes
@@ -369,7 +369,7 @@ interface ConnectorProps {
   height?: string;
 }
 
-export function Connector({ status, height = 'h-8 sm:h-14' }: ConnectorProps) {
+export const Connector = memo(function Connector({ status, height = 'h-8 sm:h-14' }: ConnectorProps) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: '-15px' });
 
@@ -407,7 +407,7 @@ export function Connector({ status, height = 'h-8 sm:h-14' }: ConnectorProps) {
       )}
     </div>
   );
-}
+});
 
 /* ────────────────────────────────────────
    NodeDetail - Bottom sheet modal
@@ -417,7 +417,7 @@ interface NodeDetailProps {
   onClose: () => void;
 }
 
-export function NodeDetail({ node, onClose }: NodeDetailProps) {
+export const NodeDetail = memo(function NodeDetail({ node, onClose }: NodeDetailProps) {
   const isDone = node.status === 'done';
   const isActive = node.status === 'active';
   const isMilestone = node.status === 'milestone';
@@ -577,4 +577,4 @@ export function NodeDetail({ node, onClose }: NodeDetailProps) {
         </motion.div>
     </motion.div>
   );
-}
+});
