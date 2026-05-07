@@ -202,7 +202,6 @@ function DayNode({
   const isActive = status === 'active';
   const isLocked = status === 'locked';
 
-  const accentColor = isBranchDay ? '#e879f9' : '#58c4dc';
   const nodeColor = isDone ? '#58cc02' : isActive ? '#ffc800' : '#5a7f8f';
   const bgColor = isDone
     ? 'linear-gradient(145deg, rgba(88,204,2,0.15), #1a3347)'
@@ -318,8 +317,6 @@ function WeekSection({
   const totalDays = week.days.length;
   const weekProgress = totalDays > 0 ? Math.round((completedCount / totalDays) * 100) : 0;
   const isWeekComplete = weekProgress === 100;
-
-  const accentColor = isShared ? '#ffc800' : '#58c4dc';
 
   return (
     <motion.section ref={ref} initial={{ opacity: 0, y: 50 }} animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -721,7 +718,7 @@ export default function MainRoadmap() {
           // Also unlock branch days if user has selected branches
           const branchSelections = sData.selections || [];
           for (const sel of branchSelections) {
-            const branch = allBranches.find(b => b.id === sel.branchId);
+            const branch = branches.find(b => b.id === sel.branchId);
             if (branch) {
               for (const week of branch.weeks) {
                 for (const day of week.days) {
