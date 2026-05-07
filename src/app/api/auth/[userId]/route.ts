@@ -46,3 +46,28 @@ export async function GET(
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ userId: string }> }
+) {
+  try {
+    const { userId } = await params;
+    const body = await request.json();
+    const { onboarded } = body;
+
+    const user = await db.user.update({
+      where: { id: userId },
+      data: {
+        ...(onboarded !== undefined && { onboarded: Boolean(onboarded) }),
+      },
+    });
+
+    const { password: _, ...userWithoutPassword } = user;
+
+    return NextResponse.json({ user: userWithoutPassword });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'خطأ في تحديث بيانات المستخدم';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}

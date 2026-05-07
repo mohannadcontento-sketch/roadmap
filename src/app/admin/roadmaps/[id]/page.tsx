@@ -20,6 +20,9 @@ import {
   GripVertical,
   Loader2,
   ExternalLink,
+  Volume2,
+  Upload,
+  X,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -53,12 +56,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
 import { useToast } from '@/hooks/use-toast';
 
 /* ── Types ── */
@@ -166,7 +163,9 @@ export default function RoadmapEditorPage() {
     url: '',
     xpReward: '5',
     targetDayId: '',
+    audioUrl: '',
   });
+  const [uploadingAudio, setUploadingAudio] = useState(false);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{
@@ -362,6 +361,7 @@ export default function RoadmapEditorPage() {
       url: '',
       xpReward: '5',
       targetDayId: dayId,
+      audioUrl: '',
     });
     setContentDialogOpen(true);
   }
@@ -375,6 +375,7 @@ export default function RoadmapEditorPage() {
       url: content.url || '',
       xpReward: String(content.xpReward),
       targetDayId: dayId,
+      audioUrl: (content as Record<string, unknown>).audioUrl ? String((content as Record<string, unknown>).audioUrl) : '',
     });
     setContentDialogOpen(true);
   }
@@ -394,6 +395,7 @@ export default function RoadmapEditorPage() {
             description: contentForm.description || null,
             url: contentForm.url || null,
             xpReward: parseInt(contentForm.xpReward) || 5,
+            ...(contentForm.audioUrl && { audioUrl: contentForm.audioUrl }),
           }),
         });
         if (!res.ok) throw new Error('فشل في تحديث المحتوى');
@@ -407,6 +409,7 @@ export default function RoadmapEditorPage() {
             description: contentForm.description || null,
             url: contentForm.url || null,
             xpReward: parseInt(contentForm.xpReward) || 5,
+            ...(contentForm.audioUrl && { audioUrl: contentForm.audioUrl }),
           }),
         });
         if (!res.ok) throw new Error('فشل في إنشاء المحتوى');
@@ -1128,6 +1131,55 @@ export default function RoadmapEditorPage() {
                 }
                 className="bg-[#162d40] border-[rgba(88,196,220,0.15)] text-[#f8f5f0]"
               />
+            </div>
+
+            {/* Audio Upload */}
+            <div className="space-y-2">
+              <Label className="text-[#a3c4d0] text-sm">ملف صوتي (اختياري)</Label>
+              {contentForm.audioUrl ? (
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-[#162d40] border border-[rgba(88,196,220,0.15)]">
+                  <Volume2 className="w-4 h-4 text-[#58c4dc] flex-shrink-0" />
+                  <audio controls src={contentForm.audioUrl} className="flex-1 h-8" />
+                  <button
+                    onClick={() => setContentForm({ ...contentForm, audioUrl: '' })}
+                    className="p-1.5 rounded-lg hover:bg-red-400/10 text-[#5a7f8f] hover:text-red-400 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <label className="flex items-center gap-3 p-3 rounded-xl bg-[#162d40] border border-dashed border-[rgba(88,196,220,0.2)] cursor-pointer hover:border-[#58c4dc]/40 transition-colors">
+                  <div className="p-1.5 rounded-lg bg-[#58c4dc]/10">
+                    <Upload className="w-3.5 h-3.5 text-[#58c4dc]" />
+                  </div>
+                  <p className="text-xs text-[#5a7f8f]">
+                    {uploadingAudio ? 'جارٍ الرفع...' : 'رفع ملف صوتي (mp3, wav, ogg, webm)'}
+                  </p>
+                  {uploadingAudio && <Loader2 className="w-3.5 h-3.5 text-[#58c4dc] animate-spin" />}
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setUploadingAudio(true);
+                      try {
+                        const fd = new FormData();
+                        fd.append('audio', file);
+                        const res = await fetch('/api/upload-audio', { method: 'POST', body: fd });
+                        if (res.ok) {
+                          const data = await res.json();
+                          setContentForm({ ...contentForm, audioUrl: data.url });
+                        }
+                      } catch { /* silent */ } finally {
+                        setUploadingAudio(false);
+                      }
+                    }}
+                    disabled={uploadingAudio}
+                  />
+                </label>
+              )}
             </div>
           </div>
           <DialogFooter className="gap-2 sm:gap-0">

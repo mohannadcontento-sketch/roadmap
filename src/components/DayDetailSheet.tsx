@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
-import { X, Play, BookOpen, Gamepad2, CheckCircle2, Star, Loader2 } from 'lucide-react';
+import { X, Play, BookOpen, Gamepad2, CheckCircle2, Star, Loader2, Volume2 } from 'lucide-react';
 
 /* ═══════════════════════════════════════
    Types
@@ -15,6 +15,7 @@ export interface ContentItem {
   description?: string | null;
   url?: string | null;
   imageUrl?: string | null;
+  audioUrl?: string | null;
   xpReward: number;
   sortOrder: number;
   settings?: string | null;
@@ -281,18 +282,48 @@ function TaskItem({ item }: { item: ContentItem }) {
 }
 
 function ContentItemRenderer({ item, index }: { item: ContentItem; index: number }) {
-  switch (item.type) {
-    case 'youtube_reel':
-      return <YoutubeReelItem key={item.id} item={item} />;
-    case 'game_challenge':
-      return <GameChallengeItem key={item.id} item={item} />;
-    case 'article':
-      return <ArticleItem key={item.id} item={item} />;
-    case 'task':
-      return <TaskItem key={item.id} item={item} />;
-    default:
-      return null;
-  }
+  return (
+    <div>
+      {item.audioUrl && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mb-3"
+        >
+          <div
+            className="flex items-center gap-3 p-3 rounded-xl"
+            style={{
+              background: 'linear-gradient(145deg, rgba(88,196,220,0.08), rgba(88,196,220,0.02))',
+              border: '1px solid rgba(88,196,220,0.12)',
+            }}
+          >
+            <div
+              className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ background: 'rgba(88,196,220,0.15)' }}
+            >
+              <Volume2 className="w-4 h-4" style={{ color: '#58c4dc' }} />
+            </div>
+            <audio controls src={item.audioUrl} className="flex-1 h-8" preload="none" />
+          </div>
+        </motion.div>
+      )}
+      {(() => {
+        switch (item.type) {
+          case 'youtube_reel':
+            return <YoutubeReelItem key={item.id} item={item} />;
+          case 'game_challenge':
+            return <GameChallengeItem key={item.id} item={item} />;
+          case 'article':
+            return <ArticleItem key={item.id} item={item} />;
+          case 'task':
+            return <TaskItem key={item.id} item={item} />;
+          default:
+            return null;
+        }
+      })()}
+    </div>
+  );
 }
 
 /* ═══════════════════════════════════════

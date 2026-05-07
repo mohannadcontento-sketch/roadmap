@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
-  ArrowRight, Flame, Gem, Trophy, Zap, Star, Target,
+  ArrowRight, Flame, Gem, Trophy, Zap, Target,
   Share2, Copy, CheckCircle2, Calendar, TrendingUp,
   BookOpen, Award, Loader2, Gift,
 } from 'lucide-react';

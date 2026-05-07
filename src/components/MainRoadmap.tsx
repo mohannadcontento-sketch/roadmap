@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/store/auth';
 import DayDetailSheet, { type DayData } from './DayDetailSheet';
+import BranchSelection from './BranchSelection';
 
 /* ═══════════════════════════════════════
    Types
@@ -499,119 +500,65 @@ export default function MainRoadmap() {
   const [selectedDay, setSelectedDay] = useState<DayData | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
-  // Fetch roadmaps and user progress
+  // Branch state
+  const [availableBranches, setAvailableBranches] = useState<Array<{
+    id: string; title: string; description?: string | null; icon?: string | null;
+    branchType: string; requiredWeekIndex: number;
+  }>>([]);
+  const [showBranchSelection, setShowBranchSelection] = useState(false);
+  const [branchSelectionType, setBranchSelectionType] = useState('hobby');
+  const [userSelectedBranches, setUserSelectedBranches] = useState<string[]>([]);
+  const [lastCompletedWeekIndex, setLastCompletedWeekIndex] = useState(-1);
+
+  // Fetch roadmaps, user progress, and branches in a single effect
   useEffect(() => {
     async function fetchData() {
       if (!user) return;
       setIsLoading(true);
       try {
-        const [roadmapsRes, progressRes] = await Promise.all([
+        const [roadmapsRes, progressRes, branchesRes, selectionsRes] = await Promise.all([
           fetch('/api/roadmaps'),
           fetch(`/api/progress/${user.id}`),
+          fetch('/api/branches'),
+          fetch(`/api/branches/user/${user.id}`),
         ]);
 
+        let roadmapData: Roadmap[] = [];
         if (roadmapsRes.ok) {
           const data = await roadmapsRes.json();
-          setRoadmaps(data.roadmaps || []);
+          roadmapData = data.roadmaps || [];
+          setRoadmaps(roadmapData);
+        }
+
+        const map = new Map<string, DayStatus>();
+
+        // Initialize all days as locked
+        for (const roadmap of roadmapData) {
+          for (const week of roadmap.weeks) {
+            for (const day of week.days) {
+              map.set(day.id, 'locked');
+            }
+          }
         }
 
         if (progressRes.ok) {
           const data = await progressRes.json();
-          const map = new Map<string, DayStatus>();
-
-          // Mark all days as locked by default from roadmaps
-          for (const roadmap of roadmaps) {
-            for (const week of roadmap.weeks) {
-              for (const day of week.days) {
-                map.set(day.id, 'locked');
-              }
-            }
-          }
-
-          // Update from progress data
-          if (data.enrollments) {
-            for (const enrollment of data.enrollments) {
-              for (const week of enrollment.roadmap.weeks) {
-                for (const day of week.days) {
-                  map.set(day.id, 'locked');
-                }
-              }
-            }
-          }
-
-          // Fetch actual day progress
-          const dayProgressRes = await fetch(`/api/progress/${user.id}`);
-          if (dayProgressRes.ok) {
-            const progressData = await dayProgressRes.json();
-            // We need to get individual day statuses
-            // For now, derive from enrollments data
-          }
-
-          // Actually let's set the first day of the first roadmap as active if no progress
-          const roadmapData = roadmapsRes.ok ? await roadmapsRes.clone().json().then(d => d.roadmaps || []) : [];
-          if (roadmapData.length > 0 && roadmapData[0].weeks.length > 0 && roadmapData[0].weeks[0].days.length > 0) {
-            const firstDayId = roadmapData[0].weeks[0].days[0].id;
-            // Only set active if not already set by progress
-            if (!map.has(firstDayId) || map.get(firstDayId) === 'locked') {
-              // Check if this is the initial state
-              map.set(firstDayId, 'active');
-            }
-          }
-
-          setDayProgressMap(map);
-        }
-      } catch (err) {
-        console.error('Failed to fetch data:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    fetchData();
-  }, [user]);
-
-  // Better progress fetching
-  useEffect(() => {
-    async function fetchDayProgress() {
-      if (!user || roadmaps.length === 0) return;
-
-      try {
-        // For each roadmap, check if user is enrolled and get day statuses
-        // We'll use the progress endpoint data
-        const progressRes = await fetch(`/api/progress/${user.id}`);
-        if (progressRes.ok) {
-          const data = await progressRes.json();
-          const map = new Map<string, DayStatus>();
-
-          // Initialize all days as locked
-          for (const roadmap of roadmaps) {
-            for (const week of roadmap.weeks) {
-              for (const day of week.days) {
-                map.set(day.id, 'locked');
-              }
-            }
-          }
-
-          // We need a way to get individual day progress statuses
-          // Since the current progress API doesn't return per-day statuses directly,
-          // we'll make a reasonable assumption based on completedDays count
-          // and activate the next unlocked day
 
           if (data.enrollments && data.enrollments.length > 0) {
-            let allDays: Array<{ id: string; weekId: string }> = [];
+            let allDays: Array<{ id: string }> = [];
 
             for (const enrollment of data.enrollments) {
-              const r = roadmaps.find(rm => rm.id === enrollment.roadmapId);
+              const r = roadmapData.find(rm => rm.id === enrollment.roadmapId);
               if (r) {
                 for (const week of r.weeks) {
                   for (const day of week.days) {
-                    allDays.push({ id: day.id, weekId: week.id });
+                    allDays.push({ id: day.id });
                   }
                 }
               }
             }
 
-            // Sort days by their order across weeks
-            // Mark first `completedDays` as completed, next as active
+            // Mark first N days as completed based on server stats, next as active
             const completedCount = data.stats.completedDays;
             for (let i = 0; i < allDays.length; i++) {
               if (i < completedCount) {
@@ -621,23 +568,94 @@ export default function MainRoadmap() {
               }
             }
           } else {
-            // Not enrolled in any roadmap - activate first day
-            if (roadmaps.length > 0 && roadmaps[0].weeks.length > 0 && roadmaps[0].weeks[0].days.length > 0) {
-              map.set(roadmaps[0].weeks[0].days[0].id, 'active');
+            // Not enrolled - activate first day of first roadmap
+            if (roadmapData.length > 0 && roadmapData[0].weeks.length > 0 && roadmapData[0].weeks[0].days.length > 0) {
+              map.set(roadmapData[0].weeks[0].days[0].id, 'active');
             }
           }
-
-          setDayProgressMap(map);
+        } else {
+          // Progress fetch failed - still activate first day
+          if (roadmapData.length > 0 && roadmapData[0].weeks.length > 0 && roadmapData[0].weeks[0].days.length > 0) {
+            map.set(roadmapData[0].weeks[0].days[0].id, 'active');
+          }
         }
+
+        setDayProgressMap(map);
+
+        // Fetch branches and user selections
+        if (branchesRes.ok) {
+          const bData = await branchesRes.json();
+          setAvailableBranches(bData.branches || []);
+        }
+
+        if (selectionsRes.ok) {
+          const sData = await selectionsRes.json();
+          const selectedIds = (sData.selections || []).map((s: { branchId: string }) => s.branchId);
+          setUserSelectedBranches(selectedIds);
+        }
+
+        // Calculate the last fully completed week index to determine branch triggers
+        let maxCompletedWeek = -1;
+        for (const roadmap of roadmapData) {
+          for (let wIdx = 0; wIdx < roadmap.weeks.length; wIdx++) {
+            const week = roadmap.weeks[wIdx];
+            const allCompleted = week.days.every(d => map.get(d.id) === 'completed');
+            if (allCompleted && wIdx > maxCompletedWeek) maxCompletedWeek = wIdx;
+          }
+        }
+        setLastCompletedWeekIndex(maxCompletedWeek);
       } catch (err) {
-        console.error('Failed to fetch day progress:', err);
+        console.error('Failed to fetch data:', err);
+      } finally {
+        setIsLoading(false);
       }
     }
+    fetchData();
+  }, [user]);
 
-    if (roadmaps.length > 0) {
-      fetchDayProgress();
+  // Branch selection handler
+  const handleBranchSelect = useCallback(async (branchId: string) => {
+    if (!user) return;
+    try {
+      const res = await fetch('/api/branches/select', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, branchId }),
+      });
+      if (res.ok) {
+        setUserSelectedBranches(prev => [...prev, branchId]);
+        setShowBranchSelection(false);
+      }
+    } catch { /* silent */ }
+  }, [user]);
+
+  // Check if branch selection should be shown
+  const shouldShowHobbyBranch = useMemo(() => {
+    if (lastCompletedWeekIndex < 2) return false;
+    const hobbyBranch = availableBranches.find(b => b.branchType === 'hobby' && b.requiredWeekIndex === 2);
+    if (!hobbyBranch) return false;
+    return !userSelectedBranches.includes(hobbyBranch.id);
+  }, [lastCompletedWeekIndex, availableBranches, userSelectedBranches]);
+
+  const shouldShowSkillBranch = useMemo(() => {
+    if (lastCompletedWeekIndex < 7) return false;
+    const skillBranch = availableBranches.find(b => b.branchType === 'skill' && b.requiredWeekIndex === 7);
+    if (!skillBranch) return false;
+    return !userSelectedBranches.includes(skillBranch.id);
+  }, [lastCompletedWeekIndex, availableBranches, userSelectedBranches]);
+
+  // Determine which branch to show
+  const activeBranchType = shouldShowHobbyBranch ? 'hobby' : shouldShowSkillBranch ? 'skill' : null;
+  const branchesToShow = activeBranchType
+    ? availableBranches.filter(b => b.branchType === activeBranchType)
+    : [];
+
+  useEffect(() => {
+    if (branchesToShow.length > 0 && activeBranchType && !showBranchSelection) {
+      setBranchSelectionType(activeBranchType);
+      setShowBranchSelection(true);
     }
-  }, [user, roadmaps]);
+  }, [branchesToShow, activeBranchType, showBranchSelection]);
 
   const handleDayClick = useCallback((day: RoadmapDay, _status: DayStatus) => {
     if (_status === 'locked') return;
@@ -842,6 +860,41 @@ export default function MainRoadmap() {
             />
           ))
         ))}
+
+        {/* Branch Selection */}
+        <AnimatePresence>
+          {showBranchSelection && branchesToShow.length > 0 && (
+            <motion.div
+              key={branchSelectionType}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="mt-4 mb-8"
+            >
+              <div
+                className="rounded-2xl p-6"
+                style={{
+                  background: 'linear-gradient(145deg, #1a3347, #162d40)',
+                  border: '1px solid rgba(88,196,220,0.15)',
+                  boxShadow: '0 0 40px rgba(88,196,220,0.05)',
+                }}
+              >
+                <BranchSelection
+                  branches={branchesToShow}
+                  branchType={branchSelectionType}
+                  title={branchSelectionType === 'hobby' ? 'اختر هوايتك! 🎯' : 'اختر مهارتك! 🔧'}
+                  subtitle={
+                    branchSelectionType === 'hobby'
+                      ? 'اختر هواية واحدة لممارسةها أثناء الأسبوع'
+                      : 'اختر مهارة جديدة لتطويرها'
+                  }
+                  onSelect={handleBranchSelect}
+                  onDismiss={() => setShowBranchSelection(false)}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Bottom navigation */}

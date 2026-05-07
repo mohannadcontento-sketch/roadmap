@@ -18,7 +18,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { title, message, sortOrder, isActive, adminId } = body;
+    const { title, message, sortOrder, isActive, adminId, audioUrl } = body;
 
     if (!title || !message) {
       return NextResponse.json(
@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
         sortOrder: sortOrder != null ? parseInt(sortOrder) : 0,
         isActive: isActive !== undefined ? Boolean(isActive) : true,
         adminId: adminId || null,
+        ...(audioUrl !== undefined && { audioUrl: audioUrl || null }),
       },
     });
 

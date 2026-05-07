@@ -13,6 +13,7 @@ interface WelcomeMessage {
   id: string;
   title: string;
   message: string;
+  audioUrl?: string | null;
   sortOrder: number;
 }
 
@@ -47,37 +48,60 @@ function useTTS() {
   const [muted, setMuted] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const speak = useCallback((text: string) => {
-    if (muted || typeof window === 'undefined' || !window.speechSynthesis) return;
+  const speak = useCallback((text: string, audioUrl?: string | null) => {
+    if (muted || typeof window === 'undefined') return;
 
-    // Cancel any ongoing speech
-    window.speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'ar-SA';
-    utterance.rate = 0.9;
-    utterance.pitch = 1.1;
-    utterance.volume = 1;
-
-    // Try to find an Arabic voice
-    const voices = window.speechSynthesis.getVoices();
-    const arabicVoice = voices.find(v => v.lang.startsWith('ar'));
-    if (arabicVoice) {
-      utterance.voice = arabicVoice;
+    // Stop any ongoing speech/audio
+    window.speechSynthesis?.cancel();
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
     }
 
-    utterance.onstart = () => setSpeaking(true);
-    utterance.onend = () => setSpeaking(false);
-    utterance.onerror = () => setSpeaking(false);
+    function fallbackTTS() {
+      if (!window.speechSynthesis) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'ar-SA';
+      utterance.rate = 0.9;
+      utterance.pitch = 1.1;
+      utterance.volume = 1;
+      const voices = window.speechSynthesis.getVoices();
+      const arabicVoice = voices.find(v => v.lang.startsWith('ar'));
+      if (arabicVoice) utterance.voice = arabicVoice;
+      utterance.onstart = () => setSpeaking(true);
+      utterance.onend = () => setSpeaking(false);
+      utterance.onerror = () => setSpeaking(false);
+      utteranceRef.current = utterance;
+      window.speechSynthesis.speak(utterance);
+    }
 
-    utteranceRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
+    // If audioUrl exists, play it instead of TTS
+    if (audioUrl) {
+      if (!audioRef.current) {
+        audioRef.current = new Audio(audioUrl);
+      } else {
+        audioRef.current.src = audioUrl;
+      }
+      audioRef.current.onplay = () => setSpeaking(true);
+      audioRef.current.onended = () => setSpeaking(false);
+      audioRef.current.onerror = () => setSpeaking(false);
+      audioRef.current.play().catch(() => fallbackTTS());
+      return;
+    }
+
+    fallbackTTS();
   }, [muted]);
 
   const stop = useCallback(() => {
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
+    if (typeof window !== 'undefined') {
+      window.speechSynthesis?.cancel();
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
       setSpeaking(false);
     }
   }, []);
@@ -247,7 +271,7 @@ export default function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
       hasSpokenRef.current = currentMsg.id;
       // Small delay before speaking so user sees the full text first
       const timer = setTimeout(() => {
-        speak(currentMsg.title + '. ' + currentMsg.message);
+        speak(currentMsg.title + '. ' + currentMsg.message, currentMsg.audioUrl);
       }, 400);
       return () => clearTimeout(timer);
     }

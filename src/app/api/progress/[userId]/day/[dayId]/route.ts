@@ -31,6 +31,19 @@ export async function POST(
       return NextResponse.json({ error: 'اليوم غير موجود' }, { status: 404 });
     }
 
+    // Check if already completed - idempotency guard
+    const existingProgress = await db.dayProgress.findUnique({
+      where: { userId_dayId: { userId, dayId } },
+    });
+
+    if (existingProgress && existingProgress.status === 'completed') {
+      return NextResponse.json({
+        message: 'اليوم مكتمل بالفعل ✓',
+        progress: existingProgress,
+        xpAwarded: 0,
+      });
+    }
+
     // Create or update progress
     const progress = await db.dayProgress.upsert({
       where: {

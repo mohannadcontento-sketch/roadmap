@@ -17,6 +17,7 @@ export async function PUT(
         ...(body.description !== undefined && { description: body.description }),
         ...(body.url !== undefined && { url: body.url }),
         ...(body.imageUrl !== undefined && { imageUrl: body.imageUrl }),
+        ...(body.audioUrl !== undefined && { audioUrl: body.audioUrl || null }),
         ...(body.xpReward !== undefined && { xpReward: parseInt(body.xpReward) }),
         ...(body.sortOrder !== undefined && { sortOrder: parseInt(body.sortOrder) }),
         ...(body.settings !== undefined && {

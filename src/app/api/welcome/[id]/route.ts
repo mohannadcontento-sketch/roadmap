@@ -8,7 +8,7 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { title, message, sortOrder, isActive, adminId } = body;
+    const { title, message, sortOrder, isActive, adminId, audioUrl } = body;
 
     const welcomeMessage = await db.welcomeMessage.update({
       where: { id },
@@ -18,6 +18,7 @@ export async function PUT(
         ...(sortOrder !== undefined && { sortOrder: parseInt(sortOrder) }),
         ...(isActive !== undefined && { isActive: Boolean(isActive) }),
         ...(adminId !== undefined && { adminId: adminId || null }),
+        ...(audioUrl !== undefined && { audioUrl: audioUrl || null }),
       },
     });
 

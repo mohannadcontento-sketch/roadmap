@@ -12,6 +12,7 @@ import {
   Menu,
   X,
   ShieldCheck,
+  GitBranch,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -31,6 +32,11 @@ const navItems = [
     href: '/admin/welcome',
     label: 'رسائل الترحيب',
     icon: MessageSquareHeart,
+  },
+  {
+    href: '/admin/branches',
+    label: 'الفروع',
+    icon: GitBranch,
   },
 ];
 

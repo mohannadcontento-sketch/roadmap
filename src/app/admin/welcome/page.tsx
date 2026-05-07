@@ -12,6 +12,9 @@ import {
   Loader2,
   Sparkles,
   Search,
+  Volume2,
+  Upload,
+  X,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -45,6 +48,7 @@ interface WelcomeMessage {
   id: string;
   title: string;
   message: string;
+  audioUrl?: string | null;
   sortOrder: number;
   isActive: boolean;
   createdAt: string;
@@ -72,8 +76,9 @@ export default function WelcomeMessagesPage() {
   // Create/Edit dialog
   const [formOpen, setFormOpen] = useState(false);
   const [editingMessage, setEditingMessage] = useState<WelcomeMessage | null>(null);
-  const [formData, setFormData] = useState({ title: '', message: '' });
+  const [formData, setFormData] = useState({ title: '', message: '', audioUrl: '' });
   const [submitting, setSubmitting] = useState(false);
+  const [uploadingAudio, setUploadingAudio] = useState(false);
 
   // Preview dialog
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -115,13 +120,13 @@ export default function WelcomeMessagesPage() {
 
   function openCreate() {
     setEditingMessage(null);
-    setFormData({ title: '', message: '' });
+    setFormData({ title: '', message: '', audioUrl: '' });
     setFormOpen(true);
   }
 
   function openEdit(msg: WelcomeMessage) {
     setEditingMessage(msg);
-    setFormData({ title: msg.title, message: msg.message });
+    setFormData({ title: msg.title, message: msg.message, audioUrl: msg.audioUrl || '' });
     setFormOpen(true);
   }
 
@@ -150,6 +155,7 @@ export default function WelcomeMessagesPage() {
       const body: Record<string, unknown> = {
         title: formData.title,
         message: formData.message,
+        ...(formData.audioUrl && { audioUrl: formData.audioUrl }),
       };
 
       const res = await fetch(url, {
@@ -485,6 +491,58 @@ export default function WelcomeMessagesPage() {
               <p className="text-xs text-[#5a7f8f]">
                 {formData.message.length} حرف
               </p>
+            </div>
+
+            {/* Audio Upload */}
+            <div className="space-y-2">
+              <Label className="text-[#a3c4d0] text-sm">تسجيل صوتي (اختياري)</Label>
+              {formData.audioUrl ? (
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-[#162d40] border border-[rgba(88,196,220,0.15)]">
+                  <Volume2 className="w-4 h-4 text-[#58c4dc] flex-shrink-0" />
+                  <audio controls src={formData.audioUrl} className="flex-1 h-8" />
+                  <button
+                    onClick={() => setFormData({ ...formData, audioUrl: '' })}
+                    className="p-1.5 rounded-lg hover:bg-red-400/10 text-[#5a7f8f] hover:text-red-400 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <label className="flex items-center gap-3 p-4 rounded-xl bg-[#162d40] border border-dashed border-[rgba(88,196,220,0.2)] cursor-pointer hover:border-[#58c4dc]/40 transition-colors">
+                  <div className="p-2 rounded-lg bg-[#58c4dc]/10">
+                    <Upload className="w-4 h-4 text-[#58c4dc]" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-[#f8f5f0]">
+                      {uploadingAudio ? 'جارٍ الرفع...' : 'اضغط لرفع ملف صوتي'}
+                    </p>
+                    <p className="text-xs text-[#5a7f8f]">mp3, wav, ogg, webm (حد أقصى 10 ميجا)</p>
+                  </div>
+                  {uploadingAudio && <Loader2 className="w-4 h-4 text-[#58c4dc] animate-spin" />}
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setUploadingAudio(true);
+                      try {
+                        const fd = new FormData();
+                        fd.append('audio', file);
+                        const res = await fetch('/api/upload-audio', { method: 'POST', body: fd });
+                        if (res.ok) {
+                          const data = await res.json();
+                          setFormData({ ...formData, audioUrl: data.url });
+                        }
+                      } catch { /* silent */ } finally {
+                        setUploadingAudio(false);
+                      }
+                    }}
+                    disabled={uploadingAudio}
+                  />
+                </label>
+              )}
             </div>
           </div>
 
