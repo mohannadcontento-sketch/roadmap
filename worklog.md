@@ -32,3 +32,26 @@ Stage Summary:
 - Felfel Arabic font integrated
 - Star background replaced with gradient orbs
 - Build: 0 errors, Lint: 0 errors, All 29 routes working
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: Branch content system - separate branch tasks, shared tasks, interleaved display, progress integration
+
+Work Log:
+- Read and analyzed existing schema and all API routes
+- Created `/src/app/api/seed/branch-content/route.ts` with full content for 10 branches (2 weeks × 4 days × 2-3 items each) and 3 shared review weeks
+- Rewrote `/src/components/MainRoadmap.tsx` with interleaved display logic using DisplaySection union type
+- Updated `/src/app/api/progress/[userId]/route.ts` to include branch progress data
+- Seeded 23 weeks, 91 days, 228 content items total
+- Lint: 0 errors, Build: passing, All routes working
+
+Stage Summary:
+- 5 hobby branches with content: الرياضة, القراءة, الشطرنج, الرسم, الكتابة
+- 5 skill branches with content: البرمجة, التصوير, الطبخ, التأمل, اللغات
+- 3 shared review weeks: مراجعة نصف الطريق, مراجعة قبل النهاية, الأسبوع الأخير
+- Interleaved roadmap display with proper ordering
+- Branch sections styled with purple accent and GitBranch icon
+- Shared weeks styled with gold accent and "مهمات مجمعة" badge
+- Branch day completion awards XP and tracks progress
+- Progress API returns branch-specific progress data

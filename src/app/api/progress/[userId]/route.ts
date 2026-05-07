@@ -16,13 +16,14 @@ export async function GET(
       return NextResponse.json({ error: 'مستخدم غير موجود' }, { status: 404 });
     }
 
-    // Get enrollments with roadmap info
+    // Get enrollments with roadmap info (main weeks only)
     const enrollments = await db.userEnrollment.findMany({
       where: { userId },
       include: {
         roadmap: {
           include: {
             weeks: {
+              where: { branchId: null },
               include: {
                 days: true,
               },
@@ -33,9 +34,48 @@ export async function GET(
       },
     });
 
-    // Get all day progress
+    // Get all day progress (includes branch days)
     const dayProgress = await db.dayProgress.findMany({
       where: { userId },
+    });
+
+    // Get branch selections with progress
+    const branchSelections = await db.userBranchSelection.findMany({
+      where: { userId },
+      include: {
+        branch: {
+          include: {
+            weeks: {
+              include: {
+                days: {
+                  include: {
+                    progress: {
+                      where: { userId },
+                    },
+                  },
+                },
+              },
+              orderBy: { sortOrder: 'asc' },
+            },
+          },
+        },
+      },
+    });
+
+    // Calculate branch progress
+    const branchProgress = branchSelections.map((sel) => {
+      const allDays = sel.branch.weeks.flatMap((w) => w.days);
+      const completedDays = allDays.filter(
+        (d) => d.progress.length > 0 && d.progress[0].status === 'completed'
+      ).length;
+      return {
+        branchId: sel.branch.id,
+        branchTitle: sel.branch.title,
+        branchType: sel.branch.branchType,
+        totalDays: allDays.length,
+        completedDays,
+        progressPercent: allDays.length > 0 ? Math.round((completedDays / allDays.length) * 100) : 0,
+      };
     });
 
     // Calculate stats
@@ -72,11 +112,13 @@ export async function GET(
         lastActiveAt: user.lastActiveAt,
       },
       enrollments: enrollmentsWithProgress,
+      branchProgress,
       stats: {
         completedDays,
         activeDays,
         totalXpEarned,
         totalEnrollments: enrollments.length,
+        totalBranchSelections: branchSelections.length,
       },
     });
   } catch (error: unknown) {
