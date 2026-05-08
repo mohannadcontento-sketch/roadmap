@@ -222,22 +222,10 @@ export default function RoadmapEditorPage() {
     if (!weekForm.title.trim()) return;
     try {
       setSubmitting(true);
-      const nextOrder = roadmap
-        ? (roadmap.weeks?.length || 0)
-        : 0;
-
-      const res = await fetch(`/api/roadmaps/${id}/weeks`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...weekForm,
-          sortOrder: editingWeek ? editingWeek.sortOrder : nextOrder,
-        }),
-      });
-      if (!res.ok) throw new Error('فشل في حفظ الأسبوع');
 
       if (editingWeek) {
-        await fetch(`/api/weeks/${editingWeek.id}`, {
+        // Update existing week
+        const res = await fetch(`/api/weeks/${editingWeek.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -245,6 +233,22 @@ export default function RoadmapEditorPage() {
             description: weekForm.description || null,
           }),
         });
+        if (!res.ok) throw new Error('فشل في تحديث الأسبوع');
+      } else {
+        // Create new week
+        const nextOrder = roadmap
+          ? (roadmap.weeks?.length || 0)
+          : 0;
+
+        const res = await fetch(`/api/roadmaps/${id}/weeks`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...weekForm,
+            sortOrder: nextOrder,
+          }),
+        });
+        if (!res.ok) throw new Error('فشل في إنشاء الأسبوع');
       }
 
       toast({

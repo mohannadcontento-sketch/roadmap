@@ -14,6 +14,11 @@ export async function GET(
         weeks: {
           include: {
             days: {
+              include: {
+                content: {
+                  orderBy: { sortOrder: 'asc' },
+                },
+              },
               orderBy: { sortOrder: 'asc' },
             },
           },

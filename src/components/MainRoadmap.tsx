@@ -23,6 +23,7 @@ interface ContentItem {
   description?: string | null;
   url?: string | null;
   imageUrl?: string | null;
+  audioUrl?: string | null;
   xpReward: number;
   sortOrder: number;
   settings?: string | null;
@@ -657,11 +658,12 @@ export default function MainRoadmap() {
         }
 
         // Also init branch days
+        let branchesData: BranchInfo[] = [];
         if (branchesRes.ok) {
           const bData = await branchesRes.json();
-          const branches = (bData.branches || []) as BranchInfo[];
-          setAllBranches(branches);
-          for (const branch of branches) {
+          branchesData = (bData.branches || []) as BranchInfo[];
+          setAllBranches(branchesData);
+          for (const branch of branchesData) {
             for (const week of branch.weeks) {
               for (const day of week.days) {
                 map.set(day.id, 'locked');
@@ -718,7 +720,7 @@ export default function MainRoadmap() {
           // Also unlock branch days if user has selected branches
           const branchSelections = sData.selections || [];
           for (const sel of branchSelections) {
-            const branch = branches.find(b => b.id === sel.branchId);
+            const branch = branchesData.find(b => b.id === sel.branchId);
             if (branch) {
               for (const week of branch.weeks) {
                 for (const day of week.days) {

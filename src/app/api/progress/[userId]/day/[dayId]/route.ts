@@ -153,6 +153,19 @@ export async function PUT(
       );
     }
 
+    // Get day info for XP awarding
+    const day = await db.roadmapDay.findUnique({
+      where: { id: dayId },
+    });
+
+    // Check existing progress to avoid double XP
+    const existingProgress = await db.dayProgress.findUnique({
+      where: { userId_dayId: { userId, dayId } },
+    });
+
+    const wasAlreadyCompleted = existingProgress?.status === 'completed';
+    const shouldAwardXp = status === 'completed' && !wasAlreadyCompleted && day;
+
     const progress = await db.dayProgress.upsert({
       where: {
         userId_dayId: { userId, dayId },
@@ -161,15 +174,31 @@ export async function PUT(
         userId,
         dayId,
         status,
+        xpEarned: shouldAwardXp ? day.xpReward : 0,
         completedAt: status === 'completed' ? new Date() : null,
       },
       update: {
         status,
+        xpEarned: shouldAwardXp ? day.xpReward : (existingProgress?.xpEarned || 0),
         completedAt: status === 'completed' ? new Date() : null,
       },
     });
 
-    return NextResponse.json({ progress });
+    // Award XP if marking as completed for the first time
+    if (shouldAwardXp) {
+      await db.user.update({
+        where: { id: userId },
+        data: {
+          xp: { increment: day.xpReward },
+          lastActiveAt: new Date(),
+        },
+      });
+    }
+
+    return NextResponse.json({
+      progress,
+      xpAwarded: shouldAwardXp ? day?.xpReward || 0 : 0,
+    });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'خطأ في تحديث التقدم';
     return NextResponse.json({ error: message }, { status: 500 });

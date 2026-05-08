@@ -29,8 +29,8 @@ export async function GET(
       return NextResponse.json({ error: 'المشاركة غير موجودة' }, { status: 404 });
     }
 
-    // Increment views
-    await db.share.update({
+    // Increment views and re-read to get accurate count
+    const updatedShare = await db.share.update({
       where: { id: share.id },
       data: { views: { increment: 1 } },
     });
@@ -64,7 +64,7 @@ export async function GET(
         title: share.title,
         message: share.message,
         imageUrl: share.imageUrl,
-        views: share.views + 1,
+        views: updatedShare.views,
         createdAt: share.createdAt,
       },
       user: share.user,

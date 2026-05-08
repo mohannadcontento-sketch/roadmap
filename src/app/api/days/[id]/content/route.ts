@@ -10,7 +10,7 @@ export async function POST(
   try {
     const { id: dayId } = await params;
     const body = await request.json();
-    const { type, title, description, url, imageUrl, xpReward, sortOrder, settings } = body;
+    const { type, title, description, url, imageUrl, audioUrl, xpReward, sortOrder, settings } = body;
 
     if (!type || !VALID_TYPES.includes(type)) {
       return NextResponse.json(
@@ -37,6 +37,7 @@ export async function POST(
         description: description || null,
         url: url || null,
         imageUrl: imageUrl || null,
+        audioUrl: audioUrl || null,
         xpReward: xpReward != null ? parseInt(xpReward) : 5,
         sortOrder: sortOrder != null ? parseInt(sortOrder) : 0,
         settings: settings ? JSON.stringify(settings) : null,

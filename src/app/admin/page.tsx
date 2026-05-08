@@ -57,14 +57,12 @@ export default function AdminDashboard() {
   useEffect(() => {
     async function fetchStats() {
       try {
-        const [roadmapsRes, usersRes, welcomeRes] = await Promise.all([
+        const [roadmapsRes, welcomeRes] = await Promise.all([
           fetch('/api/admin/roadmaps'),
-          fetch('/api/admin/init'),
           fetch('/api/admin/welcome'),
         ]);
 
         const roadmapsData = await roadmapsRes.json();
-        const usersData = await usersRes.json();
         const welcomeData = await welcomeRes.json();
 
         const roadmaps = roadmapsData.roadmaps || [];
@@ -82,6 +80,10 @@ export default function AdminDashboard() {
           0
         );
 
+        const activeMessages = (welcomeData.messages || []).filter(
+          (m: { isActive: boolean }) => m.isActive === true
+        );
+
         setStats({
           totalRoadmaps: roadmaps.length,
           activeRoadmaps: roadmaps.filter(
@@ -93,10 +95,10 @@ export default function AdminDashboard() {
           closedRoadmaps: roadmaps.filter(
             (r: { status: string }) => r.status === 'closed'
           ).length,
-          totalUsers: usersData.users?.length || 0,
+          totalUsers: 0,
           totalWeeks,
           totalDays,
-          welcomeMessages: welcomeData.messages?.length || 0,
+          welcomeMessages: activeMessages.length,
         });
       } catch {
         // silently fail
